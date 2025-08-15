@@ -110,9 +110,9 @@ pub mut:
 	elements_quantity []f32
 }
 
-pub fn (mana_pool Mana_pool) render(x f32, y f32, thickness f32, segments int, ctx gg.Context) {
+pub fn (mana_pool Mana_pool) render(x f32, y f32, thickness f32, ctx gg.Context) {
 	mana_render(mana_pool.elements_list, mana_pool.elements_quantity, x, y, 0, thickness,
-		segments, ctx)
+		100, ctx)
 }
 
 pub fn (mut mana_pool Mana_pool) rejecting(element Elements, quantity f32) Mana_pool {
