@@ -1,7 +1,7 @@
 module main
 
 import gg
-import mana
+import mana {Elements}
 
 const bg_color = gg.Color{0, 0, 0, 255}
 
@@ -17,7 +17,7 @@ fn main() {
 	app.ctx = gg.new_context(
 		width:        100 * 8
 		height:       100 * 6
-		window_title: '-Render Life-'
+		window_title: '-Render Mana-'
 		user_data:    app
 		bg_color:     bg_color
 		frame_fn:     on_frame
@@ -25,9 +25,9 @@ fn main() {
 	)
 
 	app.player_pool = mana.Mana_pool{
-		elements_list:     [mana.Elements.water, mana.Elements.air, mana.Elements.fire,
-			mana.Elements.earth]
-		elements_quantity: [f32(1), 15, 25, 2]
+		elements_list:     [Elements.water, Elements.air, Elements.fire,
+			Elements.earth]
+		elements_quantity: [f32(1), 30, 25, 2]
 	}
 
 	app.ctx.run()
@@ -35,6 +35,7 @@ fn main() {
 
 fn on_frame(mut app App) {
 	app.ctx.begin()
-	app.player_pool.render(400, 300, 50, 20, app.ctx)
+	app.player_pool.render(400, 300, 50, app.ctx)
+	app.player_pool.rejecting(Elements.air, 0.1)
 	app.ctx.end()
 }
