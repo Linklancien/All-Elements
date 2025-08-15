@@ -104,7 +104,7 @@ pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f
 
 // MANA POOL:
 pub struct Mana_pool {
-mut:
+pub mut:
 	// Two list of the same size
 	elements_list     []Elements
 	elements_quantity []f32
@@ -116,26 +116,25 @@ pub fn (mana_pool Mana_pool) render(x f32, y f32, thickness f32, segments int, c
 }
 
 pub fn (mut mana_pool Mana_pool) rejecting(element Elements, quantity f32) Mana_pool {
-	if !(element in mana_pool.elements_list ){
+	if element !in mana_pool.elements_list {
 		panic("This element isn't in this mana pool")
 	}
 
-	new_quantity := 0
-	for index, pool_element in mana_pool.element{
-		if pool_element == element{
-			if mana_pool.elements_quantity[index] >= quantity{
+	mut new_quantity := f32(0.0)
+	for index, pool_element in mana_pool.elements_list {
+		if pool_element == element {
+			if mana_pool.elements_quantity[index] >= quantity {
 				new_quantity = quantity
 				mana_pool.elements_quantity[index] -= quantity
-			}
-			else{
+			} else {
 				new_quantity = mana_pool.elements_quantity[index]
-				mana_pool.elements_quantity[index] = 0
+				mana_pool.elements_quantity[index] = 0.0
 			}
 			break
 		}
 	}
-	
-	if new_quantity > 0{
+
+	if new_quantity > 0 {
 		return Mana_pool{
 			elements_list:     [element]
 			elements_quantity: [new_quantity]
@@ -144,24 +143,23 @@ pub fn (mut mana_pool Mana_pool) rejecting(element Elements, quantity f32) Mana_
 	return Mana_pool{}
 }
 
-pub fn (mut mana_pool Mana_pool) absorbing(other_mana_pool Mana_pool){
-	for other_index, other_element on other_mana_pool.elements_list{
-		not_merged := true
-		for index, element in mana_pool.elements_list{
-			if other_element == element{
-				merged = false
-				mana_pool.elements_quantity[index] += other_mana_pool.elements_quantity[other_ndex]
+pub fn (mut mana_pool Mana_pool) absorbing(other_mana_pool Mana_pool) {
+	for other_index, other_element in other_mana_pool.elements_list {
+		mut not_merged := true
+		for index, element in mana_pool.elements_list {
+			if other_element == element {
+				not_merged = false
+				mana_pool.elements_quantity[index] += other_mana_pool.elements_quantity[other_index]
 				break
 			}
 		}
 
-		if not_merged{
+		if not_merged {
 			mana_pool.elements_list << [other_element]
-			mana_pool.elements_quantity << other_mana_pool.elements_quantity[other_ndex]
+			mana_pool.elements_quantity << other_mana_pool.elements_quantity[other_index]
 		}
 	}
 }
-
 
 // USEFULL FN:
 fn somme(list []f32) f32 {
