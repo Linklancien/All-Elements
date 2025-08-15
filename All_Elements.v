@@ -8,6 +8,8 @@ const bg_color = gg.Color{0, 0, 0, 255}
 struct App {
 mut:
 	ctx &gg.Context = unsafe { nil }
+
+	player_pool mana.Mana_pool
 }
 
 fn main() {
@@ -21,13 +23,18 @@ fn main() {
 		frame_fn:     on_frame
 		sample_count: 4
 	)
+
+	app.player_pool = mana.Mana_pool{
+		elements_list:     [mana.Elements.water, mana.Elements.air, mana.Elements.fire,
+			mana.Elements.earth]
+		elements_quantity: [f32(1), 15, 25, 2]
+	}
+
 	app.ctx.run()
 }
 
 fn on_frame(mut app App) {
 	app.ctx.begin()
-	elements_list := [mana.Elements.water, mana.Elements.air, mana.Elements.fire, mana.Elements.earth]
-	elements_quantity := [f32(1), 15, 25, 2]
-	mana.mana_render(elements_list, elements_quantity, 400, 300, 0, 50, 20, app.ctx)
+	app.player_pool.render(400, 300, 50, 20, app.ctx)
 	app.ctx.end()
 }
