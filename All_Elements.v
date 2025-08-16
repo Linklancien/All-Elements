@@ -33,6 +33,7 @@ fn main() {
 		user_data:    app
 		bg_color:     bg_color
 		frame_fn:     on_frame
+		event_fn:		on_event
 		sample_count: 4
 	)
 
@@ -48,9 +49,40 @@ fn on_frame(mut app App) {
 	app.ctx.begin()
 	app.player.pool.render(300, 300, 50, app.ctx)
 	app.ext_pool.render(600, 300, 50, app.ctx)
-	app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
-	if app.player.pool.elements_quantity[1] == 0 {
-		app.player.pool.absorbing(mut app.ext_pool)
-	}
 	app.ctx.end()
+}
+
+fn on_event(e &gg.Event, mut app App){
+	match e.typ{
+		.key_down{
+			match e.key_code{
+				.e{
+					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
+				}
+				.r{
+					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_earth))
+				}
+				.t{
+					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_fire))
+				}
+				.y{
+					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_water))
+				}
+				.d{
+					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_air))
+				}
+				.f{
+					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_earth))
+				}
+				.g{
+					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_fire))
+				}
+				.h{
+					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_water))
+				}
+				else{}
+			}
+		}
+		else{}
+	}
 }

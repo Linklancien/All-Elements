@@ -95,10 +95,13 @@ pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f
 				c = gg.gray
 			}
 		}
-		end_angle = math.pi * 2 / f32(total) * elements_quantity[index] + start_angle
-		ctx.draw_arc_filled(x, y, radius, thickness + elements_quantity[index], start_angle,
-			end_angle, segments, c)
-		start_angle = end_angle
+		quantity := elements_quantity[index]
+		if quantity != 0{
+			end_angle = math.pi * 2 / f32(total) * quantity + start_angle
+			ctx.draw_arc_filled(x, y, radius, thickness + quantity, start_angle,
+				end_angle, segments, c)
+			start_angle = end_angle
+		}
 	}
 }
 
