@@ -119,7 +119,7 @@ pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool 
 	mut elements_list := []Elements{}
 	mut elements_quantity := []f32{}
 
-	for other_index, other_element in other_mana_pool.elements_list{
+	for other_index, other_element in other_mana_pool.elements_list {
 		mut new_quantity := f32(0.0)
 		for index, element in mana_pool.elements_list {
 			if element == other_element {
@@ -136,18 +136,18 @@ pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool 
 		}
 
 		if new_quantity > 0 {
-			elements_list <<   [other_element]
+			elements_list << [other_element]
 			elements_quantity << [new_quantity]
 		}
 	}
-	
+
 	return Mana_pool{
-		elements_list: elements_list
+		elements_list:     elements_list
 		elements_quantity: elements_quantity
 	}
 }
 
-pub fn (mut mana_pool Mana_pool) absorbing(other_mana_pool Mana_pool) {
+pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	for other_index, other_element in other_mana_pool.elements_list {
 		mut not_merged := true
 		for index, element in mana_pool.elements_list {
@@ -163,6 +163,7 @@ pub fn (mut mana_pool Mana_pool) absorbing(other_mana_pool Mana_pool) {
 			mana_pool.elements_quantity << other_mana_pool.elements_quantity[other_index]
 		}
 	}
+	other_mana_pool = Mana_pool{}
 }
 
 // USEFULL FN:
