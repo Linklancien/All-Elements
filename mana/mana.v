@@ -115,32 +115,36 @@ pub fn (mana_pool Mana_pool) render(x f32, y f32, thickness f32, ctx gg.Context)
 		100, ctx)
 }
 
-pub fn (mut mana_pool Mana_pool) rejecting(element Elements, quantity f32) Mana_pool {
-	if element !in mana_pool.elements_list {
-		panic("This element isn't in this mana pool")
-	}
+pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
+	mut elements_list := []Elements{}
+	mut elements_quantity := []f32{}
 
-	mut new_quantity := f32(0.0)
-	for index, pool_element in mana_pool.elements_list {
-		if pool_element == element {
-			if mana_pool.elements_quantity[index] >= quantity {
-				new_quantity = quantity
-				mana_pool.elements_quantity[index] -= quantity
-			} else {
-				new_quantity = mana_pool.elements_quantity[index]
-				mana_pool.elements_quantity[index] = 0.0
+	for other_index, other_element in other_mana_pool.elements_list{
+		mut new_quantity := f32(0.0)
+		for index, element in mana_pool.elements_list {
+			if element == other_element {
+				quantity := other_mana_pool.elements_quantity[other_index]
+				if mana_pool.elements_quantity[index] >= quantity {
+					new_quantity = quantity
+					mana_pool.elements_quantity[index] -= quantity
+				} else {
+					new_quantity = mana_pool.elements_quantity[index]
+					mana_pool.elements_quantity[index] = 0.0
+				}
+				break
 			}
-			break
 		}
-	}
 
-	if new_quantity > 0 {
-		return Mana_pool{
-			elements_list:     [element]
-			elements_quantity: [new_quantity]
+		if new_quantity > 0 {
+			elements_list <<   [other_element]
+			elements_quantity << [new_quantity]
 		}
 	}
-	return Mana_pool{}
+	
+	return Mana_pool{
+		elements_list: elements_list
+		elements_quantity: elements_quantity
+	}
 }
 
 pub fn (mut mana_pool Mana_pool) absorbing(other_mana_pool Mana_pool) {
