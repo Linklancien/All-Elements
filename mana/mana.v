@@ -124,6 +124,19 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	other_mana_pool = Mana_pool{}
 }
 
+pub fn (mana_pool Mana_pool) most_of_element() Elements{
+	mut max_id := 0
+	mut max := mana_pool.elements_quantity[0]
+	for index, quantity in mana_pool.elements_quantity{
+		if max < quantity{
+			max = quantity
+			max_id = index
+		}
+	}
+
+	return mana_pool.elements_list[max_id]
+}
+
 // WORLD MAP
 pub struct Mana_map {
 pub:
@@ -180,11 +193,30 @@ fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange 
 }
 
 pub fn (mana_map Mana_map) render(ctx gg.Context, debug bool) {
-	if debug {
-		for x in 0 .. mana_map.mana_pool_list.len {
-			for y in 0 .. mana_map.mana_pool_list[0].len {
+	for x in 0 .. mana_map.mana_pool_list.len {
+		for y in 0 .. mana_map.mana_pool_list[0].len {
+			if debug {
 				mana_map.mana_pool_list[x][y].render(ctx, x * mana_map.tile_size + mana_map.x,
 					y * mana_map.tile_size + mana_map.y)
+			}
+			else{
+				mut c := gg.Color{}
+				match mana_map.mana_pool_list[x][y].most_of_element() {
+					.water {
+						c = gg.dark_blue
+					}
+					.fire {
+						c = gg.dark_red
+					}
+					.earth {
+						c = gg.dark_green
+					}
+					.air {
+						c = gg.gray
+					}
+				}
+				ctx.draw_rect_filled(x * mana_map.tile_size + mana_map.x - mana_map.tile_size/2,
+					y * mana_map.tile_size + mana_map.y - mana_map.tile_size/2, mana_map.tile_size, mana_map.tile_size, c)
 			}
 		}
 	}
