@@ -57,20 +57,25 @@ fn main() {
 			radius:        20
 			thickness_min: 10
 			thickness_max: 20
-			segments:      100
 		}
 		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
 		elements_quantity: [f32(1), 30, 25, 2]
 	}
 
+	nb := 7
+	tile_size := 50
 	app.mana_map = Mana_map{
-		tile_size:      100
+		tile_size:             tile_size * 2
 		minimum_mana_exchange: 0.0005
-		x:              50
-		y:              50
-		mana_pool_list: [][]Mana_pool{len: 5, init: []Mana_pool{len: 5, init: Mana_pool{
+		x:                     tile_size
+		y:                     tile_size
+		mana_pool_list:        [][]Mana_pool{len: nb, init: []Mana_pool{len: nb, init: Mana_pool{
+			render_const:      mana.Render_const{
+				thickness_max: tile_size
+			}
 			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [rand.f32() + index - index , rand.f32() + index - index , rand.f32() + index - index , rand.f32() + index - index ]
+			elements_quantity: [rand.f32(), rand.f32(), rand.f32(),
+				rand.f32()]
 		}}}
 	}
 

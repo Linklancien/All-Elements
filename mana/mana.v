@@ -124,11 +124,11 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	other_mana_pool = Mana_pool{}
 }
 
-pub fn (mana_pool Mana_pool) most_of_element() Elements{
+pub fn (mana_pool Mana_pool) most_of_element() Elements {
 	mut max_id := 0
 	mut max := mana_pool.elements_quantity[0]
-	for index, quantity in mana_pool.elements_quantity{
-		if max < quantity{
+	for index, quantity in mana_pool.elements_quantity {
+		if max < quantity {
 			max = quantity
 			max_id = index
 		}
@@ -149,29 +149,28 @@ pub mut:
 }
 
 pub fn (mut mana_map Mana_map) balancing() {
-	mut new_mana_map := mana_map.mana_pool_list.clone()
-
-	for x in 0 .. mana_map.mana_pool_list.len {
-		for y in 0 .. mana_map.mana_pool_list[0].len {
+	mana_map_sav := mana_map
+	x_max := mana_map.mana_pool_list.len
+	y_max := mana_map.mana_pool_list[0].len
+	for x in 0 .. x_max {
+		for y in 0 .. y_max {
 			neighbors := [[x - 1, y], [x + 1, y], [x, y - 1],
 				[x, y + 1]]
 			for adj in neighbors {
-				if adj[0] > -1 && adj[0] < mana_map.mana_pool_list.len && adj[1] > -1 && adj[1] < mana_map.mana_pool_list[0].len {
-					element_greater, element_smaller := difference(mana_map.mana_pool_list[x][y],
-						mana_map.mana_pool_list[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
-					for index, element in mana_map.mana_pool_list[x][y].elements_list {
+				if adj[0] > -1 && adj[0] < x_max && adj[1] > -1 && adj[1] < y_max {
+					element_greater, element_smaller := difference(mana_map_sav.mana_pool_list[x][y],
+						mana_map_sav.mana_pool_list[adj[0]][adj[1]], mana_map_sav.minimum_mana_exchange)
+					for index, element in mana_map_sav.mana_pool_list[x][y].elements_list {
 						if element in element_greater {
-							new_mana_map[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
+							mana_map.mana_pool_list[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
 						} else if element in element_smaller {
-							new_mana_map[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
+							mana_map.mana_pool_list[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
 						}
 					}
 				}
 			}
 		}
 	}
-
-	mana_map.mana_pool_list = new_mana_map.clone()
 }
 
 fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange f32) ([]Elements, []Elements) {
@@ -200,8 +199,7 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug bool) {
 			if debug {
 				mana_map.mana_pool_list[x][y].render(ctx, x * mana_map.tile_size + mana_map.x,
 					y * mana_map.tile_size + mana_map.y)
-			}
-			else{
+			} else {
 				mut c := gg.Color{}
 				match mana_map.mana_pool_list[x][y].most_of_element() {
 					.water {
@@ -217,8 +215,9 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug bool) {
 						c = gg.gray
 					}
 				}
-				ctx.draw_rect_filled(x * mana_map.tile_size + mana_map.x - mana_map.tile_size/2,
-					y * mana_map.tile_size + mana_map.y - mana_map.tile_size/2, mana_map.tile_size, mana_map.tile_size, c)
+				ctx.draw_rect_filled(x * mana_map.tile_size + mana_map.x - mana_map.tile_size / 2,
+					y * mana_map.tile_size + mana_map.y - mana_map.tile_size / 2, mana_map.tile_size,
+					mana_map.tile_size, c)
 			}
 		}
 	}
