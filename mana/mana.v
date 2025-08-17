@@ -123,3 +123,58 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	}
 	other_mana_pool = Mana_pool{}
 }
+
+// WORLD MAP
+fn (mut mana_map [][]Mana_pool) balancing(minimum_mana_exchange f32){
+	mut new_mana_map := mana_map.clone()
+
+	for x in 0..mana_map.len{
+		for y in 0..mana_map[0].len{
+			neighbors := [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+			for adj in neighbors{
+				element_greater, element_smaller := difference(mana_map[x][y], mana_map[adj[0]][adj[1]], minimum_mana_exchange)
+				for index, element in mana_map[x][y] {
+					if element in element_greater{
+						new_mana_map[x][y].elements_quantity[index] += minimum_mana_exchange
+					}
+					else if element in element_smaller{
+						new_mana_map[x][y].elements_quantity[index] -= minimum_mana_exchange
+					}
+				}
+			}
+		}
+	}
+
+	mana_map = new_mana_map
+}
+
+fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange f32) []Elements{
+	// return a list of all the elements that a more present in the second mana_pool
+	mut element_greater := []Elements{}
+	mut element_smaller := []Elements{}
+
+	for index1, element1 in mana_pool1.elements_list{
+		for index2, element2 in mana_pool2.elements_list{
+			if element1 == element2{
+				if mana_pool1.elements_quantity[index1] + minimum_mana_exchange < mana_pool2.elements_quantity[index2]{
+					element_greater << element1
+				}
+				else if mana_pool2.elements_quantity[index2] + minimum_mana_exchange < mana_pool1.elements_quantity[index1]{
+					element_smaller << element1
+				}
+			}
+		}
+	}
+
+	return element_greater, element_smaller
+}
+
+fn (mana_map [][]Mana_pool) render(tile_size f32, debug bool, ctx gg.Context){
+	if debug {
+		for x in 0..mana_map.len{
+			for y in 0..mana_map[0].len{
+				mana_map[x][y].render(x*tile_size, y*tile_size, ctx)
+			}
+		}
+	}
+}
