@@ -156,13 +156,15 @@ pub fn (mut mana_map Mana_map) balancing() {
 			neighbors := [[x - 1, y], [x + 1, y], [x, y - 1],
 				[x, y + 1]]
 			for adj in neighbors {
-				element_greater, element_smaller := difference(mana_map.mana_pool_list[x][y],
-					mana_map.mana_pool_list[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
-				for index, element in mana_map.mana_pool_list[x][y].elements_list {
-					if element in element_greater {
-						new_mana_map[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
-					} else if element in element_smaller {
-						new_mana_map[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
+				if adj[0] > -1 && adj[0] < mana_map.mana_pool_list.len && adj[1] > -1 && adj[1] < mana_map.mana_pool_list[0].len {
+					element_greater, element_smaller := difference(mana_map.mana_pool_list[x][y],
+						mana_map.mana_pool_list[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
+					for index, element in mana_map.mana_pool_list[x][y].elements_list {
+						if element in element_greater {
+							new_mana_map[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
+						} else if element in element_smaller {
+							new_mana_map[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
+						}
 					}
 				}
 			}

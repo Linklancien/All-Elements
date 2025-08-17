@@ -1,6 +1,7 @@
 module main
 
 import gg
+import rand
 import mana { Elements, Mana_map, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
@@ -38,6 +39,7 @@ mut:
 }
 
 fn main() {
+	rand.seed([u32(0), 0])
 	mut app := &App{}
 	app.ctx = gg.new_context(
 		width:        100 * 8
@@ -63,11 +65,12 @@ fn main() {
 
 	app.mana_map = Mana_map{
 		tile_size:      100
+		minimum_mana_exchange: 0.0005
 		x:              50
 		y:              50
 		mana_pool_list: [][]Mana_pool{len: 5, init: []Mana_pool{len: 5, init: Mana_pool{
 			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [f32(1), 2, 3, 2]
+			elements_quantity: [rand.f32(), rand.f32(), rand.f32(), rand.f32()]
 		}}}
 	}
 
@@ -75,6 +78,8 @@ fn main() {
 }
 
 fn on_frame(mut app App) {
+	app.mana_map.balancing()
+
 	app.ctx.begin()
 	app.mana_map.render(app.ctx, true)
 	app.ctx.end()
