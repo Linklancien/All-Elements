@@ -70,7 +70,7 @@ fn main() {
 		y:              50
 		mana_pool_list: [][]Mana_pool{len: 5, init: []Mana_pool{len: 5, init: Mana_pool{
 			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [rand.f32(), rand.f32(), rand.f32(), rand.f32()]
+			elements_quantity: [rand.f32() + index - index , rand.f32() + index - index , rand.f32() + index - index , rand.f32() + index - index ]
 		}}}
 	}
 
