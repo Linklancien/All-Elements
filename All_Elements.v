@@ -18,10 +18,22 @@ mut:
 	pool Mana_pool
 
 	// Reject
-	reject_air   Mana_pool = Mana_pool{[Elements.air], [f32(0.1)]}
-	reject_fire  Mana_pool = Mana_pool{[Elements.fire], [f32(0.1)]}
-	reject_earth Mana_pool = Mana_pool{[Elements.earth], [f32(0.1)]}
-	reject_water Mana_pool = Mana_pool{[Elements.water], [f32(0.1)]}
+	reject_air   Mana_pool = Mana_pool{
+		elements_list:     [Elements.air]
+		elements_quantity: [f32(0.1)]
+	}
+	reject_fire  Mana_pool = Mana_pool{
+		elements_list:     [Elements.fire]
+		elements_quantity: [f32(0.1)]
+	}
+	reject_earth Mana_pool = Mana_pool{
+		elements_list:     [Elements.earth]
+		elements_quantity: [f32(0.1)]
+	}
+	reject_water Mana_pool = Mana_pool{
+		elements_list:     [Elements.water]
+		elements_quantity: [f32(0.1)]
+	}
 }
 
 fn main() {
@@ -33,11 +45,17 @@ fn main() {
 		user_data:    app
 		bg_color:     bg_color
 		frame_fn:     on_frame
-		event_fn:		on_event
+		event_fn:     on_event
 		sample_count: 4
 	)
 
 	app.player.pool = Mana_pool{
+		render_const:      mana.Render_const{
+			radius:        20
+			thickness_min: 10
+			thickness_max: 20
+			segments:      100
+		}
 		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
 		elements_quantity: [f32(1), 30, 25, 2]
 	}
@@ -47,42 +65,42 @@ fn main() {
 
 fn on_frame(mut app App) {
 	app.ctx.begin()
-	app.player.pool.render(300, 300, 50, app.ctx)
-	app.ext_pool.render(600, 300, 50, app.ctx)
+	app.player.pool.render(300, 300, app.ctx)
+	app.ext_pool.render(600, 300, app.ctx)
 	app.ctx.end()
 }
 
-fn on_event(e &gg.Event, mut app App){
-	match e.typ{
-		.key_down{
-			match e.key_code{
-				.e{
+fn on_event(e &gg.Event, mut app App) {
+	match e.typ {
+		.key_down {
+			match e.key_code {
+				.e {
 					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
 				}
-				.r{
+				.r {
 					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_earth))
 				}
-				.t{
+				.t {
 					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_fire))
 				}
-				.y{
+				.y {
 					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_water))
 				}
-				.d{
+				.d {
 					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_air))
 				}
-				.f{
+				.f {
 					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_earth))
 				}
-				.g{
+				.g {
 					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_fire))
 				}
-				.h{
+				.h {
 					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_water))
 				}
-				else{}
+				else {}
 			}
 		}
-		else{}
+		else {}
 	}
 }

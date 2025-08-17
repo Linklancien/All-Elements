@@ -2,6 +2,7 @@ module mana
 
 import gg
 import math
+import arrays { max, sum }
 
 pub enum Elements {
 	water
@@ -11,74 +12,17 @@ pub enum Elements {
 }
 
 //  RENDERING:
-pub fn mana_render_parts(elements_list []Elements, elements_quantity []f32, x f32, y f32, radius f32, thickness f32, segments int, ctx gg.Context) {
-	total := somme(elements_quantity)
-
-	mut start_angle := f32(0.0)
-	mut end_angle := f32(0.0)
-
+pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f32, render_const Render_const, ctx gg.Context) {
 	assert elements_list.len == elements_quantity.len, "Len aren't the same ${elements_list}, ${elements_quantity}"
+	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Render_const ${render_const}'
 
-	for index, element in elements_list {
-		mut c := gg.Color{}
-		match element {
-			.water {
-				c = gg.dark_blue
-			}
-			.fire {
-				c = gg.dark_red
-			}
-			.earth {
-				c = gg.dark_green
-			}
-			.air {
-				c = gg.gray
-			}
-		}
-		end_angle = math.pi * 2 / f32(total) * elements_quantity[index] + start_angle
-		ctx.draw_arc_filled(x, y, radius, thickness, start_angle, end_angle, segments,
-			c)
-		start_angle = end_angle
+	total := sum(elements_quantity) or { 0 }
+	thickness_const := (render_const.thickness_max - render_const.thickness_min) / max(elements_quantity) or {
+		0
 	}
-}
-
-pub fn mana_render_taille(elements_list []Elements, elements_quantity []f32, x f32, y f32, radius f32, thickness f32, segments int, ctx gg.Context) {
-	mut start_angle := f32(0.0)
-	mut end_angle := f32(0.0)
-
-	assert elements_list.len == elements_quantity.len, "Len aren't the same ${elements_list}, ${elements_quantity}"
-
-	for index, element in elements_list {
-		mut c := gg.Color{}
-		match element {
-			.water {
-				c = gg.dark_blue
-			}
-			.fire {
-				c = gg.dark_red
-			}
-			.earth {
-				c = gg.dark_green
-			}
-			.air {
-				c = gg.gray
-			}
-		}
-		end_angle = math.pi * 2 / f32(elements_list.len) + start_angle
-		ctx.draw_arc_filled(x, y, radius, 20 * elements_quantity[index], start_angle,
-			end_angle, segments, c)
-		start_angle = end_angle
-	}
-}
-
-pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f32, radius f32, thickness f32, segments int, ctx gg.Context) {
-	total := somme(elements_quantity)
 
 	mut start_angle := f32(0.0)
 	mut end_angle := f32(0.0)
-
-	assert elements_list.len == elements_quantity.len, "Len aren't the same ${elements_list}, ${elements_quantity}"
-
 	for index, element in elements_list {
 		mut c := gg.Color{}
 		match element {
@@ -96,10 +40,11 @@ pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f
 			}
 		}
 		quantity := elements_quantity[index]
-		if quantity != 0{
+		if quantity != 0 {
 			end_angle = math.pi * 2 / f32(total) * quantity + start_angle
-			ctx.draw_arc_filled(x, y, radius, thickness + quantity, start_angle,
-				end_angle, segments, c)
+			thickness := render_const.thickness_min + thickness_const * quantity
+			ctx.draw_arc_filled(x, y, render_const.radius, thickness, start_angle, end_angle,
+				render_const.segments, c)
 			start_angle = end_angle
 		}
 	}
@@ -107,15 +52,25 @@ pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f
 
 // MANA POOL:
 pub struct Mana_pool {
+pub:
+	render_const Render_const
 pub mut:
 	// Two list of the same size
 	elements_list     []Elements
 	elements_quantity []f32
 }
 
-pub fn (mana_pool Mana_pool) render(x f32, y f32, thickness f32, ctx gg.Context) {
-	mana_render(mana_pool.elements_list, mana_pool.elements_quantity, x, y, 0, thickness,
-		100, ctx)
+pub struct Render_const {
+pub:
+	radius        f32
+	thickness_min f32 = 30
+	thickness_max f32 = 50
+	segments      int = 100
+}
+
+pub fn (mana_pool Mana_pool) render(x f32, y f32, ctx gg.Context) {
+	mana_render(mana_pool.elements_list, mana_pool.elements_quantity, x, y, mana_pool.render_const,
+		ctx)
 }
 
 pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
@@ -167,13 +122,4 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 		}
 	}
 	other_mana_pool = Mana_pool{}
-}
-
-// USEFULL FN:
-fn somme(list []f32) f32 {
-	mut total := f32(0.0)
-	for nb in list {
-		total += nb
-	}
-	return total
 }
