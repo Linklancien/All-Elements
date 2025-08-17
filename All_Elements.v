@@ -1,7 +1,7 @@
 module main
 
 import gg
-import mana { Elements, Mana_pool }
+import mana { Elements, Mana_map, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
 
@@ -11,6 +11,7 @@ mut:
 
 	player   Player
 	ext_pool Mana_pool
+	mana_map Mana_map
 }
 
 struct Player {
@@ -60,13 +61,22 @@ fn main() {
 		elements_quantity: [f32(1), 30, 25, 2]
 	}
 
+	app.mana_map = Mana_map{
+		tile_size:      100
+		x:              50
+		y:              50
+		mana_pool_list: [][]Mana_pool{len: 5, init: []Mana_pool{len: 5, init: Mana_pool{
+			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
+			elements_quantity: [f32(1), 2, 3, 2]
+		}}}
+	}
+
 	app.ctx.run()
 }
 
 fn on_frame(mut app App) {
 	app.ctx.begin()
-	app.player.pool.render(300, 300, app.ctx)
-	app.ext_pool.render(600, 300, app.ctx)
+	app.mana_map.render(app.ctx, true)
 	app.ctx.end()
 }
 
