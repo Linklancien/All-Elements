@@ -22,19 +22,19 @@ mut:
 	// Reject
 	reject_air   Mana_pool = Mana_pool{
 		elements_list:     [Elements.air]
-		elements_quantity: [f32(0.1)]
+		elements_quantity: [u32(0.1)]
 	}
 	reject_fire  Mana_pool = Mana_pool{
 		elements_list:     [Elements.fire]
-		elements_quantity: [f32(0.1)]
+		elements_quantity: [u32(0.1)]
 	}
 	reject_earth Mana_pool = Mana_pool{
 		elements_list:     [Elements.earth]
-		elements_quantity: [f32(0.1)]
+		elements_quantity: [u32(0.1)]
 	}
 	reject_water Mana_pool = Mana_pool{
 		elements_list:     [Elements.water]
-		elements_quantity: [f32(0.1)]
+		elements_quantity: [u32(0.1)]
 	}
 }
 
@@ -59,23 +59,23 @@ fn main() {
 			thickness_max: 20
 		}
 		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-		elements_quantity: [f32(1), 30, 25, 2]
+		elements_quantity: [u32(1), 30, 25, 2]
 	}
 
 	nb := 7
 	tile_size := 50
 	app.mana_map = Mana_map{
 		tile_size:             tile_size * 2
-		minimum_mana_exchange: 0.0005
+		minimum_mana_exchange: 1
 		x:                     tile_size
 		y:                     tile_size
-		mana_pool_list:        [][]Mana_pool{len: nb, init: []Mana_pool{len: nb, init: Mana_pool{
+		mana_pool_list:        [][]Mana_pool{len: nb, init: []Mana_pool{len: nb + index - index, init: Mana_pool{
 			render_const:      mana.Render_const{
 				thickness_max: tile_size
 			}
 			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [rand.f32(), rand.f32(), rand.f32(),
-				rand.f32()]
+			elements_quantity: [rand.u32(), rand.u32(), rand.u32(),
+				rand.u32()]
 		}}}
 	}
 

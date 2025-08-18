@@ -12,7 +12,7 @@ pub enum Elements {
 }
 
 //  RENDERING:
-pub fn mana_render(elements_list []Elements, elements_quantity []f32, x f32, y f32, render_const Render_const, ctx gg.Context) {
+pub fn mana_render(elements_list []Elements, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
 	assert elements_list.len == elements_quantity.len, "Len aren't the same ${elements_list}, ${elements_quantity}"
 	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Render_const ${render_const}'
 
@@ -57,7 +57,7 @@ pub:
 pub mut:
 	// Two list of the same size
 	elements_list     []Elements
-	elements_quantity []f32
+	elements_quantity []u32
 }
 
 pub struct Render_const {
@@ -75,10 +75,10 @@ pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32) {
 
 pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
 	mut elements_list := []Elements{}
-	mut elements_quantity := []f32{}
+	mut elements_quantity := []u32{}
 
 	for other_index, other_element in other_mana_pool.elements_list {
-		mut new_quantity := f32(0.0)
+		mut new_quantity := u32(0.0)
 		for index, element in mana_pool.elements_list {
 			if element == other_element {
 				quantity := other_mana_pool.elements_quantity[other_index]
@@ -87,7 +87,7 @@ pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool 
 					mana_pool.elements_quantity[index] -= quantity
 				} else {
 					new_quantity = mana_pool.elements_quantity[index]
-					mana_pool.elements_quantity[index] = 0.0
+					mana_pool.elements_quantity[index] = u32(0)
 				}
 				break
 			}
@@ -141,7 +141,7 @@ pub fn (mana_pool Mana_pool) most_of_element() Elements {
 pub struct Mana_map {
 pub:
 	tile_size             f32
-	minimum_mana_exchange f32
+	minimum_mana_exchange u32
 pub mut:
 	x              f32
 	y              f32
@@ -149,7 +149,7 @@ pub mut:
 }
 
 pub fn (mut mana_map Mana_map) balancing() {
-	mana_map_sav := mana_map
+	mana_pool_list_sav := mana_map.mana_pool_list.clone()
 	x_max := mana_map.mana_pool_list.len
 	y_max := mana_map.mana_pool_list[0].len
 	for x in 0 .. x_max {
@@ -158,9 +158,9 @@ pub fn (mut mana_map Mana_map) balancing() {
 				[x, y + 1]]
 			for adj in neighbors {
 				if adj[0] > -1 && adj[0] < x_max && adj[1] > -1 && adj[1] < y_max {
-					element_greater, element_smaller := difference(mana_map_sav.mana_pool_list[x][y],
-						mana_map_sav.mana_pool_list[adj[0]][adj[1]], mana_map_sav.minimum_mana_exchange)
-					for index, element in mana_map_sav.mana_pool_list[x][y].elements_list {
+					element_greater, element_smaller := difference(mana_pool_list_sav[x][y],
+						mana_pool_list_sav[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
+					for index, element in mana_pool_list_sav[x][y].elements_list {
 						if element in element_greater {
 							mana_map.mana_pool_list[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
 						} else if element in element_smaller {
@@ -173,7 +173,7 @@ pub fn (mut mana_map Mana_map) balancing() {
 	}
 }
 
-fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange f32) ([]Elements, []Elements) {
+fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange u32) ([]Elements, []Elements) {
 	// return a list of all the elements that a more present in the second mana_pool
 	mut element_greater := []Elements{}
 	mut element_smaller := []Elements{}
