@@ -65,7 +65,7 @@ fn main() {
 	nb := 7
 	tile_size := 50
 	min_u32 := u32(0)
-	max_u32 := u32(10)
+	max_u32 := u32(100)
 	app.mana_map = Mana_map{
 		tile_size:             tile_size * 2
 		minimum_mana_exchange: 1

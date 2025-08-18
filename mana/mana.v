@@ -164,17 +164,15 @@ pub fn (mut mana_map Mana_map) balancing() {
 						mana_pool_list_sav[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
 					for index, element in mana_pool_list_sav[x][y].elements_list {
 						if element in element_greater {
-							println('change +')
 							mana_map.mana_pool_list[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
 						} else if element in element_smaller {
-							println('change -')
 							mana_map.mana_pool_list[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
 						}
 					}
 				}
 			}
 		}
-	} 
+	}
 }
 
 fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange u32) ([]Elements, []Elements) {
