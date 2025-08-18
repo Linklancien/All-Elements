@@ -64,6 +64,8 @@ fn main() {
 
 	nb := 7
 	tile_size := 50
+	min_u32 := u32(0)
+	max_u32 := u32(10)
 	app.mana_map = Mana_map{
 		tile_size:             tile_size * 2
 		minimum_mana_exchange: 1
@@ -74,8 +76,10 @@ fn main() {
 				thickness_max: tile_size
 			}
 			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [rand.u32(), rand.u32(), rand.u32(),
-				rand.u32()]
+			elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 }]
 		}}}
 	}
 

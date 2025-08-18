@@ -41,10 +41,12 @@ pub fn mana_render(elements_list []Elements, elements_quantity []u32, x f32, y f
 		}
 		quantity := elements_quantity[index]
 		if quantity != 0 {
-			end_angle = math.pi * 2 / f32(total) * quantity + start_angle
+			end_angle = math.pi * 2 * f32(quantity) / f32(total) + start_angle
 			thickness := render_const.thickness_min + thickness_const * quantity
+
 			ctx.draw_arc_filled(x, y, render_const.radius, thickness, start_angle, end_angle,
 				render_const.segments, c)
+
 			start_angle = end_angle
 		}
 	}
@@ -162,15 +164,17 @@ pub fn (mut mana_map Mana_map) balancing() {
 						mana_pool_list_sav[adj[0]][adj[1]], mana_map.minimum_mana_exchange)
 					for index, element in mana_pool_list_sav[x][y].elements_list {
 						if element in element_greater {
+							println('change +')
 							mana_map.mana_pool_list[x][y].elements_quantity[index] += mana_map.minimum_mana_exchange
 						} else if element in element_smaller {
+							println('change -')
 							mana_map.mana_pool_list[x][y].elements_quantity[index] -= mana_map.minimum_mana_exchange
 						}
 					}
 				}
 			}
 		}
-	}
+	} 
 }
 
 fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange u32) ([]Elements, []Elements) {
