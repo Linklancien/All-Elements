@@ -90,7 +90,7 @@ fn on_frame(mut app App) {
 	app.mana_map.balancing()
 
 	app.ctx.begin()
-	app.mana_map.render(app.ctx, true)
+	app.mana_map.render(app.ctx, mana.Debug_type.numbers)
 	app.ctx.end()
 }
 

@@ -19,8 +19,42 @@ pub const elements_color = {
 	Elements.air:   gg.gray
 }
 
+pub enum Debug_type {
+	no
+	pie_chart
+	numbers
+}
+
+pub fn (mut _type Debug_type) next_debug() {
+	match _type {
+		.no {
+			_type = Debug_type.pie_chart
+		}
+		.pie_chart {
+			_type = Debug_type.numbers
+		}
+		.numbers {
+			_type = Debug_type.no
+		}
+	}
+}
+
+pub fn (mut _type Debug_type) next() {
+	match _type {
+		.no {
+			_type = Debug_type.pie_chart
+		}
+		.pie_chart {
+			_type = Debug_type.no
+		}
+		else {
+			_type = Debug_type.no
+		}
+	}
+}
+
 //  RENDERING:
-pub fn mana_render(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
+fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
 	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
 	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Render_const ${render_const}'
 
@@ -65,11 +99,11 @@ pub:
 
 // UI
 pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32) {
-	mana_render(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
+	pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
 		ctx)
 }
 
-pub fn (mana_pool Mana_pool) get_color_list() []gg.Color {
+fn (mana_pool Mana_pool) get_color_list() []gg.Color {
 	mut color_list := []gg.Color{cap: mana_pool.elements_list.len}
 	for element in mana_pool.elements_list {
 		color_list << elements_color[element]
@@ -129,7 +163,7 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	other_mana_pool = Mana_pool{}
 }
 
-pub fn (mana_pool Mana_pool) most_of_element() Elements {
+fn (mana_pool Mana_pool) most_of_element() Elements {
 	mut max_id := 0
 	mut max := mana_pool.elements_quantity[0]
 	for index, quantity in mana_pool.elements_quantity {
@@ -198,18 +232,27 @@ fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange 
 	return element_greater, element_smaller
 }
 
-pub fn (mana_map Mana_map) render(ctx gg.Context, debug bool) {
+pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 	for x in 0 .. mana_map.mana_pool_list.len {
 		for y in 0 .. mana_map.mana_pool_list[0].len {
-			if debug {
-				mana_map.mana_pool_list[x][y].render(ctx, x * mana_map.tile_size + mana_map.x,
-					y * mana_map.tile_size + mana_map.y)
-			} else {
-				most := mana_map.mana_pool_list[x][y].most_of_element()
-				c := elements_color[most]
-				ctx.draw_rect_filled(x * mana_map.tile_size + mana_map.x - mana_map.tile_size / 2,
-					y * mana_map.tile_size + mana_map.y - mana_map.tile_size / 2, mana_map.tile_size,
-					mana_map.tile_size, c)
+			pos_x := x * mana_map.tile_size + mana_map.x
+			pos_y := y * mana_map.tile_size + mana_map.y
+			match debug {
+				.pie_chart {
+					mana_map.mana_pool_list[x][y].render(ctx, pos_x, pos_y)
+				}
+				.no {
+					most := mana_map.mana_pool_list[x][y].most_of_element()
+					c := elements_color[most]
+					ctx.draw_rect_filled(pos_y - mana_map.tile_size / 2, pos_y - mana_map.tile_size / 2,
+						mana_map.tile_size, mana_map.tile_size, c)
+				}
+				.numbers {
+					for index, element in mana_map.mana_pool_list[x][y].elements_list {
+						description := '${element}: ${mana_map.mana_pool_list[x][y].elements_quantity[index]}'
+						ctx.draw_text_default(int(pos_x), int(pos_y + index * 8), description)
+					}
+				}
 			}
 		}
 	}
