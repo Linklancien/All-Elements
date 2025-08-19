@@ -6,6 +6,12 @@ import mana { Elements, Mana_map, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
 
+enum Running_methode {
+	pause
+	step
+	running
+}
+
 struct App {
 mut:
 	ctx &gg.Context = unsafe { nil }
@@ -13,6 +19,9 @@ mut:
 	player   Player
 	ext_pool Mana_pool
 	mana_map Mana_map
+
+	debug_mode mana.Debug_type = mana.Debug_type.pie_chart
+	game_state Running_methode
 }
 
 struct Player {
@@ -87,10 +96,19 @@ fn main() {
 }
 
 fn on_frame(mut app App) {
-	app.mana_map.balancing()
+	match app.game_state {
+		.running {
+			app.mana_map.balancing()
+		}
+		.step {
+			app.game_state = Running_methode.pause
+			app.mana_map.balancing()
+		}
+		else {}
+	}
 
 	app.ctx.begin()
-	app.mana_map.render(app.ctx, mana.Debug_type.numbers)
+	app.mana_map.render(app.ctx, app.debug_mode)
 	app.ctx.end()
 }
 
@@ -121,6 +139,29 @@ fn on_event(e &gg.Event, mut app App) {
 				}
 				.h {
 					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_water))
+				}
+				.space {
+					match app.game_state {
+						.pause {
+							app.game_state = Running_methode.running
+						}
+						else {
+							app.game_state = Running_methode.pause
+						}
+					}
+				}
+				.enter {
+					match app.game_state {
+						.step {
+							app.game_state = Running_methode.pause
+						}
+						else {
+							app.game_state = Running_methode.step
+						}
+					}
+				}
+				.p{
+					app.debug_mode.next_debug()
 				}
 				else {}
 			}

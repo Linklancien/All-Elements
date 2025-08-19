@@ -25,30 +25,30 @@ pub enum Debug_type {
 	numbers
 }
 
-pub fn (mut _type Debug_type) next_debug() {
-	match _type {
+pub fn (mut dtype Debug_type) next_debug() {
+	match *dtype {
 		.no {
-			_type = Debug_type.pie_chart
+			dtype = Debug_type.pie_chart
 		}
 		.pie_chart {
-			_type = Debug_type.numbers
+			dtype = Debug_type.numbers
 		}
 		.numbers {
-			_type = Debug_type.no
+			dtype = Debug_type.no
 		}
 	}
 }
 
-pub fn (mut _type Debug_type) next() {
-	match _type {
+pub fn (mut dtype Debug_type) next() {
+	match *dtype {
 		.no {
-			_type = Debug_type.pie_chart
+			dtype = Debug_type.pie_chart
 		}
 		.pie_chart {
-			_type = Debug_type.no
+			dtype = Debug_type.no
 		}
 		else {
-			_type = Debug_type.no
+			dtype = Debug_type.no
 		}
 	}
 }
@@ -244,7 +244,7 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 				.no {
 					most := mana_map.mana_pool_list[x][y].most_of_element()
 					c := elements_color[most]
-					ctx.draw_rect_filled(pos_y - mana_map.tile_size / 2, pos_y - mana_map.tile_size / 2,
+					ctx.draw_rect_filled(pos_x - mana_map.tile_size / 2, pos_y - mana_map.tile_size / 2,
 						mana_map.tile_size, mana_map.tile_size, c)
 				}
 				.numbers {
