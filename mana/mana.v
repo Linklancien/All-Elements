@@ -11,9 +11,17 @@ pub enum Elements {
 	air
 }
 
+// map[Elements]gg.Color
+pub const elements_color = {
+	Elements.water: gg.dark_blue
+	Elements.fire:  gg.dark_red
+	Elements.earth: gg.dark_green
+	Elements.air:   gg.gray
+}
+
 //  RENDERING:
-pub fn mana_render(elements_list []Elements, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
-	assert elements_list.len == elements_quantity.len, "Len aren't the same ${elements_list}, ${elements_quantity}"
+pub fn mana_render(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
+	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
 	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Render_const ${render_const}'
 
 	total := sum(elements_quantity) or { 0 }
@@ -23,22 +31,7 @@ pub fn mana_render(elements_list []Elements, elements_quantity []u32, x f32, y f
 
 	mut start_angle := f32(0.0)
 	mut end_angle := f32(0.0)
-	for index, element in elements_list {
-		mut c := gg.Color{}
-		match element {
-			.water {
-				c = gg.dark_blue
-			}
-			.fire {
-				c = gg.dark_red
-			}
-			.earth {
-				c = gg.dark_green
-			}
-			.air {
-				c = gg.gray
-			}
-		}
+	for index, c in color_list {
 		quantity := elements_quantity[index]
 		if quantity != 0 {
 			end_angle = math.pi * 2 * f32(quantity) / f32(total) + start_angle
@@ -70,11 +63,21 @@ pub:
 	segments      int = 100
 }
 
+// UI
 pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32) {
-	mana_render(mana_pool.elements_list, mana_pool.elements_quantity, x, y, mana_pool.render_const,
+	mana_render(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
 		ctx)
 }
 
+pub fn (mana_pool Mana_pool) get_color_list() []gg.Color {
+	mut color_list := []gg.Color{cap: mana_pool.elements_list.len}
+	for element in mana_pool.elements_list {
+		color_list << elements_color[element]
+	}
+	return color_list
+}
+
+// FN
 pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
 	mut elements_list := []Elements{}
 	mut elements_quantity := []u32{}
@@ -202,21 +205,8 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug bool) {
 				mana_map.mana_pool_list[x][y].render(ctx, x * mana_map.tile_size + mana_map.x,
 					y * mana_map.tile_size + mana_map.y)
 			} else {
-				mut c := gg.Color{}
-				match mana_map.mana_pool_list[x][y].most_of_element() {
-					.water {
-						c = gg.dark_blue
-					}
-					.fire {
-						c = gg.dark_red
-					}
-					.earth {
-						c = gg.dark_green
-					}
-					.air {
-						c = gg.gray
-					}
-				}
+				most := mana_map.mana_pool_list[x][y].most_of_element()
+				c := elements_color[most]
 				ctx.draw_rect_filled(x * mana_map.tile_size + mana_map.x - mana_map.tile_size / 2,
 					y * mana_map.tile_size + mana_map.y - mana_map.tile_size / 2, mana_map.tile_size,
 					mana_map.tile_size, c)
