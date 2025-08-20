@@ -2,7 +2,7 @@ module main
 
 import gg
 import rand
-import mana { Elements, Mana_map, Mana_pool, Debug_type }
+import mana { Debug_type, Elements, Mana_map, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
 const tile_size = 50
@@ -25,13 +25,12 @@ mut:
 	game_state Running_methode
 }
 
-
 fn main() {
 	rand.seed([u32(0), 0])
 	mut app := &App{}
 	app.ctx = gg.new_context(
-		width:        int(2 * tile_size * (map_size + 2) )
-		height:       int(2 * tile_size * map_size )
+		width:        int(2 * tile_size * (map_size + 2))
+		height:       int(2 * tile_size * map_size)
 		window_title: '-Render Mana-'
 		user_data:    app
 		bg_color:     bg_color
@@ -48,6 +47,10 @@ fn main() {
 		}
 		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
 		elements_quantity: [u32(1), 30, 25, 2]
+	}
+	app.player.focus_pool = Mana_pool{
+		elements_list:     [Elements.water]
+		elements_quantity: [u32(1)]
 	}
 
 	min_u32 := u32(0)
@@ -150,7 +153,7 @@ fn on_event(e &gg.Event, mut app App) {
 
 struct Player {
 mut:
-	pool Mana_pool
+	pool       Mana_pool
 	focus_pool Mana_pool
 
 	// Reject
@@ -173,12 +176,13 @@ mut:
 }
 
 fn (player Player) render(ctx gg.Context, debug Debug_type) {
-	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size ), gg.Color{
+	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size),
+		gg.Color{
 		r: 100
 		g: 100
 		b: 100
 	})
 	x := int(2 * tile_size * (map_size + 1))
-	player.pool.render(ctx, x, int(tile_size * map_size / 3), tile_size, debug)
-	player.focus_pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
+	player.pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
+	player.focus_pool.render(ctx, x, int(tile_size * map_size * 4 / 3), tile_size, debug)
 }
