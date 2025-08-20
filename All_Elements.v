@@ -5,6 +5,8 @@ import rand
 import mana { Elements, Mana_map, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
+const tile_size = 50
+const map_size = 6
 
 enum Running_methode {
 	pause
@@ -51,8 +53,8 @@ fn main() {
 	rand.seed([u32(0), 0])
 	mut app := &App{}
 	app.ctx = gg.new_context(
-		width:        100 * 8
-		height:       100 * 6
+		width:        int(2 * tile_size * (map_size + 2) )
+		height:       int(2 * tile_size * map_size )
 		window_title: '-Render Mana-'
 		user_data:    app
 		bg_color:     bg_color
@@ -71,8 +73,6 @@ fn main() {
 		elements_quantity: [u32(1), 30, 25, 2]
 	}
 
-	nb := 7
-	tile_size := 50
 	min_u32 := u32(0)
 	max_u32 := u32(100)
 	app.mana_map = Mana_map{
@@ -80,7 +80,7 @@ fn main() {
 		minimum_mana_exchange: 1
 		x:                     tile_size
 		y:                     tile_size
-		mana_pool_list:        [][]Mana_pool{len: nb, init: []Mana_pool{len: nb + index - index, init: Mana_pool{
+		mana_pool_list:        [][]Mana_pool{len: map_size, init: []Mana_pool{len: map_size + index - index, init: Mana_pool{
 			render_const:      mana.Render_const{
 				thickness_max: tile_size
 			}
