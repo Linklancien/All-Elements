@@ -19,7 +19,6 @@ mut:
 	ctx &gg.Context = unsafe { nil }
 
 	player   Player
-	ext_pool Mana_pool
 	mana_map Mana_map
 
 	debug_mode mana.Debug_type = mana.Debug_type.pie_chart
@@ -29,6 +28,7 @@ mut:
 struct Player {
 mut:
 	pool Mana_pool
+	focus_pool Mana_pool
 
 	// Reject
 	reject_air   Mana_pool = Mana_pool{
@@ -117,28 +117,28 @@ fn on_event(e &gg.Event, mut app App) {
 		.key_down {
 			match e.key_code {
 				.e {
-					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
 				}
 				.r {
-					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_earth))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_earth))
 				}
 				.t {
-					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_fire))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_fire))
 				}
 				.y {
-					app.ext_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_water))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_water))
 				}
 				.d {
-					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_air))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_air))
 				}
 				.f {
-					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_earth))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_earth))
 				}
 				.g {
-					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_fire))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_fire))
 				}
 				.h {
-					app.player.pool.absorbing(mut app.ext_pool.rejecting(app.player.reject_water))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_water))
 				}
 				.space {
 					match app.game_state {
