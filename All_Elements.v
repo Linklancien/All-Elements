@@ -8,6 +8,24 @@ const bg_color = gg.Color{0, 0, 0, 255}
 const tile_size = 50
 const map_size = 6
 
+// Reject
+const reject_air   = Mana_pool{
+	elements_list:     [Elements.air]
+	elements_quantity: [u32(1)]
+}
+const reject_fire  = Mana_pool{
+	elements_list:     [Elements.fire]
+	elements_quantity: [u32(1)]
+}
+const reject_earth = Mana_pool{
+	elements_list:     [Elements.earth]
+	elements_quantity: [u32(1)]
+}
+const reject_water = Mana_pool{
+	elements_list:     [Elements.water]
+	elements_quantity: [u32(1)]
+}
+
 enum Running_methode {
 	pause
 	step
@@ -98,28 +116,29 @@ fn on_event(e &gg.Event, mut app App) {
 		.key_down {
 			match e.key_code {
 				.e {
-					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_air))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_air))
 				}
 				.r {
-					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_earth))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_earth))
+					println(app.player)
 				}
 				.t {
-					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_fire))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_fire))
 				}
 				.y {
-					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(app.player.reject_water))
+					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_water))
 				}
 				.d {
-					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_air))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(reject_air))
 				}
 				.f {
-					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_earth))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(reject_earth))
 				}
 				.g {
-					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_fire))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(reject_fire))
 				}
 				.h {
-					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(app.player.reject_water))
+					app.player.pool.absorbing(mut app.player.focus_pool.rejecting(reject_water))
 				}
 				.space {
 					match app.game_state {
@@ -155,24 +174,6 @@ struct Player {
 mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
-
-	// Reject
-	reject_air   Mana_pool = Mana_pool{
-		elements_list:     [Elements.air]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_fire  Mana_pool = Mana_pool{
-		elements_list:     [Elements.fire]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_earth Mana_pool = Mana_pool{
-		elements_list:     [Elements.earth]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_water Mana_pool = Mana_pool{
-		elements_list:     [Elements.water]
-		elements_quantity: [u32(0.1)]
-	}
 }
 
 fn (player Player) render(ctx gg.Context, debug Debug_type) {
