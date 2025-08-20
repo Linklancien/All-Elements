@@ -171,20 +171,29 @@ fn on_event(e &gg.Event, mut app App) {
 	}
 }
 
+//  PLAYER:
 struct Player {
 mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
+
+	x int
+	y int
 }
 
+// 1: render the player's mana pools
+// 2: render the player's position
 fn (player Player) render(ctx gg.Context, debug Debug_type) {
-	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size),
-		gg.Color{
+	c := gg.Color{
 		r: 100
 		g: 100
 		b: 100
-	})
+	}
+	// 1:
+	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size), c)
 	x := int(2 * tile_size * (map_size + 1))
 	player.pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
 	player.focus_pool.render(ctx, x, int(tile_size * map_size * 4 / 3), tile_size, debug)
+	// 2:
+	ctx.draw_rect_empty(player.x * tile_size, player.y * tile_size, 2 * tile_size, 2 * tile_size, c)
 }
