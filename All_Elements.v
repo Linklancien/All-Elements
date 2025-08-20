@@ -57,22 +57,24 @@ fn main() {
 		sample_count: 4
 	)
 
+	min_u32 := u32(0)
+	max_u32 := u32(100)
+
 	app.player.pool = Mana_pool{
+		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
+		elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 },
+				rand.u32_in_range(min_u32, max_u32) or { 0 }]
+	}
+	app.player.focus_pool = Mana_pool{
 		render_const:      mana.Render_const{
-			radius:        20
+			radius:        30
 			thickness_min: 10
 			thickness_max: 20
 		}
-		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-		elements_quantity: [u32(1), 30, 25, 2]
-	}
-	app.player.focus_pool = Mana_pool{
-		elements_list:     [Elements.water]
-		elements_quantity: [u32(1)]
 	}
 
-	min_u32 := u32(0)
-	max_u32 := u32(100)
 	app.mana_map = Mana_map{
 		tile_size:             tile_size * 2
 		minimum_mana_exchange: 1
@@ -120,7 +122,6 @@ fn on_event(e &gg.Event, mut app App) {
 				}
 				.r {
 					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_earth))
-					println(app.player)
 				}
 				.t {
 					app.player.focus_pool.absorbing(mut app.player.pool.rejecting(reject_fire))
