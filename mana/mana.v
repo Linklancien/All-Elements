@@ -98,9 +98,24 @@ pub:
 }
 
 // UI
-pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32) {
-	pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
-		ctx)
+pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debug Debug_type) {
+	match debug {
+		.pie_chart {
+			pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
+				ctx)
+		}
+		.no {
+			most := mana_pool.most_of_element()
+			c := elements_color[most]
+			ctx.draw_rect_filled(x - size / 2, y - size / 2, size, size, c)
+		}
+		.numbers {
+			for index, element in mana_pool.elements_list {
+				description := '${element}: ${mana_pool.elements_quantity[index]}'
+				ctx.draw_text_default(int(x), int(y + index * 8), description)
+			}
+		}
+	}
 }
 
 fn (mana_pool Mana_pool) get_color_list() []gg.Color {
@@ -237,23 +252,8 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 		for y in 0 .. mana_map.mana_pool_list[0].len {
 			pos_x := x * mana_map.tile_size + mana_map.x
 			pos_y := y * mana_map.tile_size + mana_map.y
-			match debug {
-				.pie_chart {
-					mana_map.mana_pool_list[x][y].render(ctx, pos_x, pos_y)
-				}
-				.no {
-					most := mana_map.mana_pool_list[x][y].most_of_element()
-					c := elements_color[most]
-					ctx.draw_rect_filled(pos_x - mana_map.tile_size / 2, pos_y - mana_map.tile_size / 2,
-						mana_map.tile_size, mana_map.tile_size, c)
-				}
-				.numbers {
-					for index, element in mana_map.mana_pool_list[x][y].elements_list {
-						description := '${element}: ${mana_map.mana_pool_list[x][y].elements_quantity[index]}'
-						ctx.draw_text_default(int(pos_x), int(pos_y + index * 8), description)
-					}
-				}
-			}
+			mana_map.mana_pool_list[x][y].render(ctx, pos_x, pos_y, mana_map.tile_size,
+				debug)
 		}
 	}
 }

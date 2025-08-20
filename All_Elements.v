@@ -160,7 +160,7 @@ fn on_event(e &gg.Event, mut app App) {
 						}
 					}
 				}
-				.p{
+				.p {
 					app.debug_mode.next_debug()
 				}
 				else {}
