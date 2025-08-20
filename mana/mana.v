@@ -22,8 +22,8 @@ pub const elements_color = {
 }
 
 // Reject
-const reject_air = Mana_pool{
-	elements_list:     [Elements.air]
+const reject_water = Mana_pool{
+	elements_list:     [Elements.water]
 	elements_quantity: [u32(1)]
 }
 const reject_fire = Mana_pool{
@@ -34,8 +34,8 @@ const reject_earth = Mana_pool{
 	elements_list:     [Elements.earth]
 	elements_quantity: [u32(1)]
 }
-const reject_water = Mana_pool{
-	elements_list:     [Elements.water]
+const reject_air = Mana_pool{
+	elements_list:     [Elements.air]
 	elements_quantity: [u32(1)]
 }
 
@@ -61,14 +61,14 @@ pub fn (mut dtype Debug_type) next_debug() {
 
 pub fn (mut dtype Debug_type) next() {
 	match *dtype {
-		.no {
+		.numbers {
 			dtype = Debug_type.pie_chart
 		}
 		.pie_chart {
-			dtype = Debug_type.no
+			dtype = Debug_type.numbers
 		}
 		else {
-			dtype = Debug_type.no
+			dtype = Debug_type.numbers
 		}
 	}
 }
@@ -144,6 +144,15 @@ fn (mana_pool Mana_pool) get_color_list() []gg.Color {
 		color_list << elements_color[element]
 	}
 	return color_list
+}
+
+fn (mana_pool mana_pool) get_quantity(element Elements) u32{
+	for index, elem in mana_pool.elements_list{
+		if elem == element{
+			return mana_pool.elements_quantity[index]
+		}
+	}
+	return 0
 }
 
 // FN
@@ -288,7 +297,7 @@ pub mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
 	// here is the index of the cible
-	target int = -1
+	target int
 }
 
 // 1: used for rendering during it's own turn
@@ -304,33 +313,50 @@ pub:
 	pool_y f32
 }
 
+// spell
+fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
+	if is_reverse {
+		elemental.pool.absorbing(mut elemental.focus_pool.rejecting(quantity))
+	} else {
+		elemental.focus_pool.absorbing(mut elemental.pool.rejecting(quantity))
+	}
+}
+
+// rendering
+
 // 1: render the elemental's mana pools
 fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 	// 1:
-	player.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
-	player.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
+	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
+	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
 		debug)
 }
 
 // 1: render the information
 fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
 	// 1:
-	player.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
+	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, .pie_chart)
 }
 
 // list of concurents:
+// 1: calcul some const
+// 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
 pub fn prepare_game(numbers int, width int, height int) []Elementals {
-	list_player := []Elementals{}
-
-	x_possible := [int(width / 3), int(width * 2 / 3)]
-	height_dif := height / numbers * 2
+	// 1:
+	x_possible := [int(width / 6), int(width * 5 / 6)]
+	height_dif := height / numbers
 
 	center_x := width / 2
 	center_y := height / 2
 
-	for id in O .. numbers {
-		x := x_possible[id % 0]
-		y := height_dif * numbers / 2
+	min_u32 := u32(0)
+	max_u32 := u32(100)
+
+	mut list_player := []Elementals{}
+	// 2:
+	for id in 0 .. numbers {
+		x := x_possible[id % 2]
+		y := height_dif * ((id / 2) + 1)
 		list_player << Elementals{
 			focus_pool_x: center_x
 			focus_pool_y: center_y
@@ -349,13 +375,124 @@ pub fn prepare_game(numbers int, width int, height int) []Elementals {
 	return list_player
 }
 
-pub fn (list []Elementals) render(id_turn int, ctx gg.Context, debug Debug_type) {
-	for index, elemental in list{
-		if index == id_turn{
-			elemental.self_render(ctx, debug)
+//
+enum Running_step {
+	main_menu
+	pause
+	player_turn
+	waiting_screen
+	end_turns
+	end_game
+}
+
+pub struct Pos {
+pub:
+	x int
+	y int
+}
+
+pub struct Players_info {
+pub mut:
+	center     Pos
+	players    []Elementals
+	game_state Running_step
+	debug_mode Debug_type = Debug_type.pie_chart
+	id_turn    int
+}
+
+pub fn (info Players_info) render(ctx gg.Context, debug Debug_type) {
+	match info.game_state {
+		.main_menu {
+			ctx.draw_text_default(info.center.x, info.center.y, 'MAIN MENU')
 		}
-		else{
-			elemental.ennemi_render(ctx, debug)
+		.waiting_screen {
+			ctx.draw_text_default(info.center.x, info.center.y, 'WAITING SCREEN')
+			ctx.draw_text_default(info.center.x, info.center.y + 8, 'NEXT PLAYER: ${info.id_turn}')
 		}
+		.end_turns{
+			ctx.draw_text_default(info.center.x, info.center.y, 'END TURNS')
+		}
+		.end_game{
+			ctx.draw_text_default(info.center.x, info.center.y, 'END GAME')
+		}
+		.player_turn {
+			for index, elemental in info.players {
+				if index == info.id_turn {
+					elemental.self_render(ctx, debug)
+				} else {
+					elemental.ennemi_render(ctx, debug)
+				}
+			}
+		}
+		else {}
+	}
+}
+
+pub fn (mut info Players_info) action(e &gg.Event) {
+	match e.typ {
+		.key_down {
+			match e.key_code {
+				.p {
+					info.debug_mode.next()
+				}
+				.enter {
+					info.next_game_state()
+				}
+				.e {
+					info.players[info.id_turn].spell_cast(reject_air, e.modifiers == 1)
+				}
+				.r {
+					info.players[info.id_turn].spell_cast(reject_earth, e.modifiers == 1)
+				}
+				.t {
+					info.players[info.id_turn].spell_cast(reject_fire, e.modifiers == 1)
+				}
+				.y {
+					info.players[info.id_turn].spell_cast(reject_water, e.modifiers == 1)
+				}
+				else {}
+			}
+		}
+		else {}
+	}
+}
+
+fn (mut info Players_info) deal_damage() []int {
+	for player in info.player{
+
+	}
+	return []int{}
+}
+
+fn (mut info Players_info) next_game_state() {
+	match info.game_state {
+		.main_menu {
+			info.id_turn = 0
+			info.game_state = .waiting_screen
+		}
+		.player_turn {
+			if info.id_turn == info.players.len - 1 {
+				info.id_turn = 0
+				info.game_state = .end_turns
+			} else {
+				info.id_turn += 1
+				info.game_state = .waiting_screen
+			}
+		}
+		.waiting_screen {
+			info.game_state = .player_turn
+		}
+		.end_turns {
+			defeat := info.deal_damage()
+			if defeat.len == 0 {
+				info.game_state = .waiting_screen
+			} else {
+				info.game_state = .end_game
+			}
+		}
+		.end_game {
+			info.game_state = .main_menu
+		}
+		else {}
 	}
 }
