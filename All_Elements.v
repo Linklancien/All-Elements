@@ -164,6 +164,26 @@ fn on_event(e &gg.Event, mut app App) {
 				.p {
 					app.debug_mode.next_debug()
 				}
+				.left{
+					if app.player.x > 0{
+						app.player.x -= 1
+					}
+				}
+				.right{
+					if app.player.x + 1 < map_size{
+						app.player.x += 1
+					}
+				}
+				.up{
+					if app.player.y > 0{
+						app.player.y -= 1
+					}
+				}
+				.down{
+					if app.player.y + 1 < map_size{
+						app.player.y += 1
+					}					
+				}
 				else {}
 			}
 		}
@@ -195,5 +215,5 @@ fn (player Player) render(ctx gg.Context, debug Debug_type) {
 	player.pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
 	player.focus_pool.render(ctx, x, int(tile_size * map_size * 4 / 3), tile_size, debug)
 	// 2:
-	ctx.draw_rect_empty(player.x * tile_size, player.y * tile_size, 2 * tile_size, 2 * tile_size, c)
+	ctx.draw_rect_empty(player.x * 2 * tile_size, player.y * 2 * tile_size, 2 * tile_size, 2 * tile_size, c)
 }
