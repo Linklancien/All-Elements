@@ -5,6 +5,7 @@ import math
 import arrays { max, sum }
 
 pub enum Elements {
+	empty
 	water
 	fire
 	earth
@@ -179,6 +180,9 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 }
 
 fn (mana_pool Mana_pool) most_of_element() Elements {
+	if mana_pool.elements_list.len == 0{
+		return Elements.empty
+	}
 	mut max_id := 0
 	mut max := mana_pool.elements_quantity[0]
 	for index, quantity in mana_pool.elements_quantity {
