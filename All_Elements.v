@@ -2,7 +2,7 @@ module main
 
 import gg
 import rand
-import mana { Elements, Mana_map, Mana_pool }
+import mana { Elements, Mana_map, Mana_pool, Debug_type }
 
 const bg_color = gg.Color{0, 0, 0, 255}
 const tile_size = 50
@@ -21,33 +21,10 @@ mut:
 	player   Player
 	mana_map Mana_map
 
-	debug_mode mana.Debug_type = mana.Debug_type.pie_chart
+	debug_mode Debug_type = Debug_type.pie_chart
 	game_state Running_methode
 }
 
-struct Player {
-mut:
-	pool Mana_pool
-	focus_pool Mana_pool
-
-	// Reject
-	reject_air   Mana_pool = Mana_pool{
-		elements_list:     [Elements.air]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_fire  Mana_pool = Mana_pool{
-		elements_list:     [Elements.fire]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_earth Mana_pool = Mana_pool{
-		elements_list:     [Elements.earth]
-		elements_quantity: [u32(0.1)]
-	}
-	reject_water Mana_pool = Mana_pool{
-		elements_list:     [Elements.water]
-		elements_quantity: [u32(0.1)]
-	}
-}
 
 fn main() {
 	rand.seed([u32(0), 0])
@@ -109,6 +86,7 @@ fn on_frame(mut app App) {
 
 	app.ctx.begin()
 	app.mana_map.render(app.ctx, app.debug_mode)
+	app.player.render(app.ctx, app.debug_mode)
 	app.ctx.end()
 }
 
@@ -168,4 +146,39 @@ fn on_event(e &gg.Event, mut app App) {
 		}
 		else {}
 	}
+}
+
+struct Player {
+mut:
+	pool Mana_pool
+	focus_pool Mana_pool
+
+	// Reject
+	reject_air   Mana_pool = Mana_pool{
+		elements_list:     [Elements.air]
+		elements_quantity: [u32(0.1)]
+	}
+	reject_fire  Mana_pool = Mana_pool{
+		elements_list:     [Elements.fire]
+		elements_quantity: [u32(0.1)]
+	}
+	reject_earth Mana_pool = Mana_pool{
+		elements_list:     [Elements.earth]
+		elements_quantity: [u32(0.1)]
+	}
+	reject_water Mana_pool = Mana_pool{
+		elements_list:     [Elements.water]
+		elements_quantity: [u32(0.1)]
+	}
+}
+
+fn (player Player) render(ctx gg.Context, debug Debug_type) {
+	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size ), gg.Color{
+		r: 100
+		g: 100
+		b: 100
+	})
+	x := int(2 * tile_size * (map_size + 1))
+	player.pool.render(ctx, x, int(tile_size * map_size / 3), tile_size, debug)
+	player.focus_pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
 }
