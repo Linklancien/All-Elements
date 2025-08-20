@@ -2,6 +2,7 @@ module mana
 
 import gg
 import math
+import rand
 import arrays { max, sum }
 
 pub enum Elements {
@@ -18,6 +19,24 @@ pub const elements_color = {
 	Elements.fire:  gg.dark_red
 	Elements.earth: gg.dark_green
 	Elements.air:   gg.gray
+}
+
+// Reject
+const reject_air = Mana_pool{
+	elements_list:     [Elements.air]
+	elements_quantity: [u32(1)]
+}
+const reject_fire = Mana_pool{
+	elements_list:     [Elements.fire]
+	elements_quantity: [u32(1)]
+}
+const reject_earth = Mana_pool{
+	elements_list:     [Elements.earth]
+	elements_quantity: [u32(1)]
+}
+const reject_water = Mana_pool{
+	elements_list:     [Elements.water]
+	elements_quantity: [u32(1)]
 }
 
 pub enum Debug_type {
@@ -55,9 +74,9 @@ pub fn (mut dtype Debug_type) next() {
 }
 
 //  RENDERING:
-fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Render_const, ctx gg.Context) {
+fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
 	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
-	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Render_const ${render_const}'
+	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Mana_pool_render_const ${render_const}'
 
 	total := sum(elements_quantity) or { 0 }
 	thickness_const := (render_const.thickness_max - render_const.thickness_min) / max(elements_quantity) or {
@@ -83,14 +102,14 @@ fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, rende
 // MANA POOL:
 pub struct Mana_pool {
 pub:
-	render_const Render_const
+	render_const Mana_pool_render_const
 pub mut:
 	// Two list of the same size
 	elements_list     []Elements
 	elements_quantity []u32
 }
 
-pub struct Render_const {
+pub struct Mana_pool_render_const {
 pub:
 	radius        f32
 	thickness_min f32 = 30
@@ -180,7 +199,7 @@ pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 }
 
 fn (mana_pool Mana_pool) most_of_element() Elements {
-	if mana_pool.elements_list.len == 0{
+	if mana_pool.elements_list.len == 0 {
 		return Elements.empty
 	}
 	mut max_id := 0
@@ -258,6 +277,85 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 			pos_y := y * mana_map.tile_size + mana_map.y
 			mana_map.mana_pool_list[x][y].render(ctx, pos_x, pos_y, mana_map.tile_size,
 				debug)
+		}
+	}
+}
+
+// ELEMENTALS:
+pub struct Elementals {
+	Elementals_render_const
+pub mut:
+	pool       Mana_pool
+	focus_pool Mana_pool
+	// here is the index of the cible
+	target int = -1
+}
+
+// 1: used for rendering during it's own turn
+// 2: used for rendering the information the ennemi is allowed to see
+pub struct Elementals_render_const {
+pub:
+	size f32 = 10
+	// 1:
+	focus_pool_x f32
+	focus_pool_y f32
+	// 2:
+	pool_x f32
+	pool_y f32
+}
+
+// 1: render the elemental's mana pools
+fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
+	// 1:
+	player.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
+	player.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
+		debug)
+}
+
+// 1: render the information
+fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
+	// 1:
+	player.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
+}
+
+// list of concurents:
+pub fn prepare_game(numbers int, width int, height int) []Elementals {
+	list_player := []Elementals{}
+
+	x_possible := [int(width / 3), int(width * 2 / 3)]
+	height_dif := height / numbers * 2
+
+	center_x := width / 2
+	center_y := height / 2
+
+	for id in O .. numbers {
+		x := x_possible[id % 0]
+		y := height_dif * numbers / 2
+		list_player << Elementals{
+			focus_pool_x: center_x
+			focus_pool_y: center_y
+			pool_x:       x
+			pool_y:       y
+			pool:         Mana_pool{
+				elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
+				elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 }]
+			}
+		}
+	}
+
+	return list_player
+}
+
+pub fn (list []Elementals) render(id_turn int, ctx gg.Context, debug Debug_type) {
+	for index, elemental in list{
+		if index == id_turn{
+			elemental.self_render(ctx, debug)
+		}
+		else{
+			elemental.ennemi_render(ctx, debug)
 		}
 	}
 }

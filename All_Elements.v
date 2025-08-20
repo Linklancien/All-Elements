@@ -2,45 +2,25 @@ module main
 
 import gg
 import rand
-import mana { Debug_type, Elements, Mana_map, Mana_pool }
+import mana { Debug_type, Mana_pool }
 
 const bg_color = gg.Color{0, 0, 0, 255}
-const tile_size = 50
-const map_size = 6
 
-// Reject
-const reject_air   = Mana_pool{
-	elements_list:     [Elements.air]
-	elements_quantity: [u32(1)]
-}
-const reject_fire  = Mana_pool{
-	elements_list:     [Elements.fire]
-	elements_quantity: [u32(1)]
-}
-const reject_earth = Mana_pool{
-	elements_list:     [Elements.earth]
-	elements_quantity: [u32(1)]
-}
-const reject_water = Mana_pool{
-	elements_list:     [Elements.water]
-	elements_quantity: [u32(1)]
-}
-
-enum Running_methode {
+enum Running_step {
 	pause
-	step
-	running
+	player_turn
+	waiting_screen
+	end_turns
 }
 
 struct App {
 mut:
 	ctx &gg.Context = unsafe { nil }
 
-	player   Player
-	mana_map Mana_map
+	players []mana.Elementals
 
 	debug_mode Debug_type = Debug_type.pie_chart
-	game_state Running_methode
+	game_state Running_step
 }
 
 fn main() {
@@ -60,56 +40,25 @@ fn main() {
 	min_u32 := u32(0)
 	max_u32 := u32(100)
 
-	app.player.pool = Mana_pool{
-		elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-		elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 }]
-	}
+	app.player.pool = Mana_pool{}
 	app.player.focus_pool = Mana_pool{
-		render_const:      mana.Render_const{
+		render_const: mana.Render_const{
 			radius:        30
 			thickness_min: 10
 			thickness_max: 20
 		}
 	}
 
-	app.mana_map = Mana_map{
-		tile_size:             tile_size * 2
-		minimum_mana_exchange: 1
-		x:                     tile_size
-		y:                     tile_size
-		mana_pool_list:        [][]Mana_pool{len: map_size, init: []Mana_pool{len: map_size + index - index, init: Mana_pool{
-			render_const:      mana.Render_const{
-				thickness_max: tile_size
-			}
-			elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-			elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 },
-				rand.u32_in_range(min_u32, max_u32) or { 0 }]
-		}}}
-	}
-
 	app.ctx.run()
 }
 
 fn on_frame(mut app App) {
+	app.ctx.begin()
 	match app.game_state {
-		.running {
-			app.mana_map.balancing()
-		}
-		.step {
-			app.game_state = Running_methode.pause
-			app.mana_map.balancing()
-		}
+		.player_turn {}
+		.waiting_screen {}
 		else {}
 	}
-
-	app.ctx.begin()
-	app.mana_map.render(app.ctx, app.debug_mode)
-	app.player.render(app.ctx, app.debug_mode)
 	app.ctx.end()
 }
 
@@ -144,76 +93,29 @@ fn on_event(e &gg.Event, mut app App) {
 				.space {
 					match app.game_state {
 						.pause {
-							app.game_state = Running_methode.running
+							app.game_state = Running_step.running
 						}
 						else {
-							app.game_state = Running_methode.pause
+							app.game_state = Running_step.pause
 						}
 					}
 				}
 				.enter {
 					match app.game_state {
 						.step {
-							app.game_state = Running_methode.pause
+							app.game_state = Running_step.pause
 						}
 						else {
-							app.game_state = Running_methode.step
+							app.game_state = Running_step.step
 						}
 					}
 				}
 				.p {
 					app.debug_mode.next_debug()
 				}
-				.left{
-					if app.player.x > 0{
-						app.player.x -= 1
-					}
-				}
-				.right{
-					if app.player.x + 1 < map_size{
-						app.player.x += 1
-					}
-				}
-				.up{
-					if app.player.y > 0{
-						app.player.y -= 1
-					}
-				}
-				.down{
-					if app.player.y + 1 < map_size{
-						app.player.y += 1
-					}					
-				}
 				else {}
 			}
 		}
 		else {}
 	}
-}
-
-//  PLAYER:
-struct Player {
-mut:
-	pool       Mana_pool
-	focus_pool Mana_pool
-
-	x int
-	y int
-}
-
-// 1: render the player's mana pools
-// 2: render the player's position
-fn (player Player) render(ctx gg.Context, debug Debug_type) {
-	c := gg.Color{
-		r: 100
-		g: 100
-		b: 100
-	}
-	// 1:
-	ctx.draw_rect_filled(int(2 * tile_size * map_size), 0, 4 * tile_size, int(2 * tile_size * map_size), c)
-	x := int(2 * tile_size * (map_size + 1))
-	player.pool.render(ctx, x, int(tile_size * map_size * 2 / 3), tile_size, debug)
-	player.focus_pool.render(ctx, x, int(tile_size * map_size * 4 / 3), tile_size, debug)
-	// 2:
-	ctx.draw_rect_empty(player.x * 2 * tile_size, player.y * 2 * tile_size, 2 * tile_size, 2 * tile_size, c)
 }
