@@ -1,15 +1,20 @@
 module mana
 
 // ORGA:
-// A: import, const
-// B: Game_infos
-// 
+// A: import, const, Elements, Debug_type
+// B: Game_infos, start
+// C: Elementals
+// D: World_map
+// D: Mana_pool
+// E: Rendering
 
-// A: import, const
+// A: import, const, Elements, Debug_type
 import gg
 import math
 import rand
 import arrays { max, sum }
+
+const bg_color = gg.Color{0, 0, 0, 255}
 
 pub enum Elements {
 	empty
@@ -77,6 +82,21 @@ pub fn (mut dtype Debug_type) next() {
 			dtype = Debug_type.numbers
 		}
 	}
+}
+
+enum Running_step {
+	main_menu
+	pause
+	player_turn
+	waiting_screen
+	end_turns
+	end_game
+}
+
+pub struct Pos {
+pub:
+	x int
+	y int
 }
 
 // B:Game_infos
@@ -256,160 +276,47 @@ fn (mut infos Game_infos) next_game_state() {
 	}
 }
 
+// list of concurents:
+// 1: calcul some const
+// 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
+// 3: initialise the quantity of each element !broken, need to add to the same number instead of a rand in 0..400
+pub fn prepare_game(numbers int, width int, height int) []Elementals {
+	// 1:
+	x_possible := [int(width / 6), int(width * 5 / 6)]
+	height_dif := height / numbers
 
-//  RENDERING:
-fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
-	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
-	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Mana_pool_render_const ${render_const}'
+	center_x := width / 2
+	center_y := height / 2
 
-	total := sum(elements_quantity) or { 0 }
-	thickness_const := (render_const.thickness_max - render_const.thickness_min) / max(elements_quantity) or {
-		0
-	}
+	min_u32 := u32(0)
+	max_u32 := u32(100)
 
-	mut start_angle := f32(0.0)
-	mut end_angle := f32(0.0)
-	for index, c in color_list {
-		quantity := elements_quantity[index]
-		if quantity != 0 {
-			end_angle = math.pi * 2 * f32(quantity) / f32(total) + start_angle
-			thickness := render_const.thickness_min + thickness_const * quantity
-
-			ctx.draw_arc_filled(x, y, render_const.radius, thickness, start_angle, end_angle,
-				render_const.segments, c)
-
-			start_angle = end_angle
-		}
-	}
-}
-
-// MANA POOL:
-pub struct Mana_pool {
-pub:
-	render_const Mana_pool_render_const
-pub mut:
-	// Two list of the same size
-	elements_list     []Elements
-	elements_quantity []u32
-}
-
-pub struct Mana_pool_render_const {
-pub:
-	radius        f32
-	thickness_min f32 = 30
-	thickness_max f32 = 50
-	segments      int = 100
-}
-
-// UI
-pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debug Debug_type) {
-	match debug {
-		.pie_chart {
-			pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
-				ctx)
-		}
-		.no {
-			most := mana_pool.most_of_element()
-			c := elements_color[most]
-			ctx.draw_rect_filled(x - size / 2, y - size / 2, size, size, c)
-		}
-		.numbers {
-			for index, element in mana_pool.elements_list {
-				description := '${element}: ${mana_pool.elements_quantity[index]}'
-				ctx.draw_text_default(int(x), int(y + index * 8), description)
+	mut list_player := []Elementals{}
+	// 2:
+	for id in 0 .. numbers {
+		x := x_possible[id % 2]
+		y := height_dif * ((id / 2) + 1)
+		list_player << Elementals{
+			focus_pool_x: center_x
+			focus_pool_y: center_y
+			pool_x:       x
+			pool_y:       y
+			self:         id
+			target:       if id == 0 { 1 } else { 0 }
+			// 3: ERROR
+			pool: Mana_pool{
+				elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
+				elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 },
+					rand.u32_in_range(min_u32, max_u32) or { 0 }]
 			}
 		}
-	}
-}
-
-fn (mana_pool Mana_pool) get_color_list() []gg.Color {
-	mut color_list := []gg.Color{cap: mana_pool.elements_list.len}
-	for element in mana_pool.elements_list {
-		color_list << elements_color[element]
-	}
-	return color_list
-}
-
-fn (mana_pool Mana_pool) get_quantity(element Elements) u32 {
-	for index, elem in mana_pool.elements_list {
-		if elem == element {
-			return mana_pool.elements_quantity[index]
-		}
-	}
-	return 0
-}
-
-fn (mut mana_pool Mana_pool) reset() {
-	mana_pool.elements_list = []Elements{}
-	mana_pool.elements_quantity = []u32{}
-}
-
-// FN
-pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
-	mut elements_list := []Elements{}
-	mut elements_quantity := []u32{}
-
-	for other_index, other_element in other_mana_pool.elements_list {
-		mut new_quantity := u32(0.0)
-		for index, element in mana_pool.elements_list {
-			if element == other_element {
-				quantity := other_mana_pool.elements_quantity[other_index]
-				if mana_pool.elements_quantity[index] >= quantity {
-					new_quantity = quantity
-					mana_pool.elements_quantity[index] -= quantity
-				} else {
-					new_quantity = mana_pool.elements_quantity[index]
-					mana_pool.elements_quantity[index] = u32(0)
-				}
-				break
-			}
-		}
-
-		if new_quantity > 0 {
-			elements_list << [other_element]
-			elements_quantity << [new_quantity]
-		}
+		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
+		list_player[id].showing_pool.elements_quantity = list_player[id].pool.elements_quantity.clone()
 	}
 
-	return Mana_pool{
-		elements_list:     elements_list
-		elements_quantity: elements_quantity
-	}
-}
-
-pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
-	for other_index, other_element in other_mana_pool.elements_list {
-		mut not_merged := true
-		for index, element in mana_pool.elements_list {
-			if other_element == element {
-				not_merged = false
-				mana_pool.elements_quantity[index] += other_mana_pool.elements_quantity[other_index]
-				break
-			}
-		}
-
-		if not_merged {
-			mana_pool.elements_list << [other_element]
-			mana_pool.elements_quantity << other_mana_pool.elements_quantity[other_index]
-		}
-	}
-	other_mana_pool = Mana_pool{}
-}
-
-fn (mana_pool Mana_pool) most_of_element() Elements {
-	if mana_pool.elements_list.len == 0 {
-		return Elements.empty
-	}
-	mut max_id := 0
-	mut max := mana_pool.elements_quantity[0]
-	for index, quantity in mana_pool.elements_quantity {
-		if max < quantity {
-			max = quantity
-			max_id = index
-		}
-	}
-
-	return mana_pool.elements_list[max_id]
+	return list_player
 }
 
 // WORLD MAP
@@ -543,64 +450,157 @@ fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
 		'ID: ${elemental.self}')
 }
 
-// list of concurents:
-// 1: calcul some const
-// 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
-// 3: initialise the quantity of each element !broken, need to add to the same number instead of a rand in 0..400
-pub fn prepare_game(numbers int, width int, height int) []Elementals {
-	// 1:
-	x_possible := [int(width / 6), int(width * 5 / 6)]
-	height_dif := height / numbers
+// D: Mana_pool
+pub struct Mana_pool {
+pub:
+	render_const Mana_pool_render_const
+pub mut:
+	// Two list of the same size
+	elements_list     []Elements
+	elements_quantity []u32
+}
 
-	center_x := width / 2
-	center_y := height / 2
+pub struct Mana_pool_render_const {
+pub:
+	radius        f32
+	thickness_min f32 = 30
+	thickness_max f32 = 50
+	segments      int = 100
+}
 
-	min_u32 := u32(0)
-	max_u32 := u32(100)
-
-	mut list_player := []Elementals{}
-	// 2:
-	for id in 0 .. numbers {
-		x := x_possible[id % 2]
-		y := height_dif * ((id / 2) + 1)
-		list_player << Elementals{
-			focus_pool_x: center_x
-			focus_pool_y: center_y
-			pool_x:       x
-			pool_y:       y
-			self:         id
-			target:       if id == 0 { 1 } else { 0 }
-			// 3: ERROR
-			pool: Mana_pool{
-				elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-				elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 }]
+// UI
+pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debug Debug_type) {
+	match debug {
+		.pie_chart {
+			pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
+				ctx)
+		}
+		.no {
+			most := mana_pool.most_of_element()
+			c := elements_color[most]
+			ctx.draw_rect_filled(x - size / 2, y - size / 2, size, size, c)
+		}
+		.numbers {
+			for index, element in mana_pool.elements_list {
+				description := '${element}: ${mana_pool.elements_quantity[index]}'
+				ctx.draw_text_default(int(x), int(y + index * 8), description)
 			}
 		}
-		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
-		list_player[id].showing_pool.elements_quantity = list_player[id].pool.elements_quantity.clone()
+	}
+}
+
+// FN:
+pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
+	mut elements_list := []Elements{}
+	mut elements_quantity := []u32{}
+
+	for other_index, other_element in other_mana_pool.elements_list {
+		mut new_quantity := u32(0.0)
+		for index, element in mana_pool.elements_list {
+			if element == other_element {
+				quantity := other_mana_pool.elements_quantity[other_index]
+				if mana_pool.elements_quantity[index] >= quantity {
+					new_quantity = quantity
+					mana_pool.elements_quantity[index] -= quantity
+				} else {
+					new_quantity = mana_pool.elements_quantity[index]
+					mana_pool.elements_quantity[index] = u32(0)
+				}
+				break
+			}
+		}
+
+		if new_quantity > 0 {
+			elements_list << [other_element]
+			elements_quantity << [new_quantity]
+		}
 	}
 
-	return list_player
+	return Mana_pool{
+		elements_list:     elements_list
+		elements_quantity: elements_quantity
+	}
 }
 
-//
-enum Running_step {
-	main_menu
-	pause
-	player_turn
-	waiting_screen
-	end_turns
-	end_game
+pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
+	for other_index, other_element in other_mana_pool.elements_list {
+		mut not_merged := true
+		for index, element in mana_pool.elements_list {
+			if other_element == element {
+				not_merged = false
+				mana_pool.elements_quantity[index] += other_mana_pool.elements_quantity[other_index]
+				break
+			}
+		}
+
+		if not_merged {
+			mana_pool.elements_list << [other_element]
+			mana_pool.elements_quantity << other_mana_pool.elements_quantity[other_index]
+		}
+	}
+	other_mana_pool = Mana_pool{}
 }
 
-pub struct Pos {
-pub:
-	x int
-	y int
+fn (mana_pool Mana_pool) most_of_element() Elements {
+	if mana_pool.elements_list.len == 0 {
+		return Elements.empty
+	}
+	mut max_id := 0
+	mut max := mana_pool.elements_quantity[0]
+	for index, quantity in mana_pool.elements_quantity {
+		if max < quantity {
+			max = quantity
+			max_id = index
+		}
+	}
+
+	return mana_pool.elements_list[max_id]
 }
 
-const bg_color = gg.Color{0, 0, 0, 255}
+fn (mana_pool Mana_pool) get_color_list() []gg.Color {
+	mut color_list := []gg.Color{cap: mana_pool.elements_list.len}
+	for element in mana_pool.elements_list {
+		color_list << elements_color[element]
+	}
+	return color_list
+}
 
+fn (mana_pool Mana_pool) get_quantity(element Elements) u32 {
+	for index, elem in mana_pool.elements_list {
+		if elem == element {
+			return mana_pool.elements_quantity[index]
+		}
+	}
+	return 0
+}
+
+fn (mut mana_pool Mana_pool) reset() {
+	mana_pool.elements_list = []Elements{}
+	mana_pool.elements_quantity = []u32{}
+}
+
+// E: Rendering
+fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
+	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
+	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Mana_pool_render_const ${render_const}'
+
+	total := sum(elements_quantity) or { 0 }
+	thickness_const := (render_const.thickness_max - render_const.thickness_min) / max(elements_quantity) or {
+		0
+	}
+
+	mut start_angle := f32(0.0)
+	mut end_angle := f32(0.0)
+	for index, c in color_list {
+		quantity := elements_quantity[index]
+		if quantity != 0 {
+			end_angle = math.pi * 2 * f32(quantity) / f32(total) + start_angle
+			thickness := render_const.thickness_min + thickness_const * quantity
+
+			ctx.draw_arc_filled(x, y, render_const.radius, thickness, start_angle, end_angle,
+				render_const.segments, c)
+
+			start_angle = end_angle
+		}
+	}
+}
