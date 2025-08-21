@@ -12,7 +12,13 @@ module mana
 import gg
 import math
 import rand
+import rand.config { ShuffleConfigStruct }
 import arrays { max, sum }
+
+const shuffle = ShuffleConfigStruct{
+	start: 0
+	end:   0
+}
 
 const bg_color = gg.Color{0, 0, 0, 255}
 const text_cfg = gg.TextCfg{
@@ -116,7 +122,7 @@ mut:
 }
 
 pub fn start() {
-	rand.seed([u32(0), 0])
+	// rand.seed([u32(0), 0])
 	w := 800
 	h := 600
 
@@ -178,8 +184,8 @@ fn on_frame(mut infos Game_infos) {
 				}
 				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3, 'use e, r, t, y to expulse earth, air, fire, water',
 					text_cfg)
-				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + text_cfg.size, 'use maj and the previous letter to absorb those elements',
-					text_cfg)
+				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + text_cfg.size,
+					'use maj and the previous letter to absorb those elements', text_cfg)
 			}
 		}
 		else {}
@@ -290,11 +296,10 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 	center_x := width / 2
 	center_y := height / 2
 
-	min_u32 := u32(0)
-	max_u32 := u32(100)
-
 	mut list_player := []Elementals{}
 	// 2:
+	quantity := [u32(10), 25, 20, 45]
+	elements_list := [Elements.water, Elements.air, Elements.fire, Elements.earth]
 	for id in 0 .. numbers {
 		x := x_possible[id % 2]
 		y := height_dif * ((id / 2) + 1)
@@ -307,11 +312,12 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 			target:       if id == 0 { 1 } else { 0 }
 			// 3: ERROR
 			pool: Mana_pool{
-				elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
-				elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 },
-					rand.u32_in_range(min_u32, max_u32) or { 0 }]
+				elements_list:     rand.shuffle_clone[Elements](elements_list, shuffle) or {
+					panic('Error in the suffle')
+				}
+				elements_quantity: rand.shuffle_clone[u32](quantity, shuffle) or {
+					panic('Error in the suffle')
+				}
 			}
 		}
 		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
