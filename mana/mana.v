@@ -298,7 +298,6 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 
 	mut list_player := []Elementals{}
 	// 2:
-	quantity := [u32(10), 25, 20, 45]
 	elements_list := [Elements.water, Elements.air, Elements.fire, Elements.earth]
 	for id in 0 .. numbers {
 		x := x_possible[id % 2]
@@ -315,9 +314,7 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 				elements_list:     rand.shuffle_clone[Elements](elements_list, shuffle) or {
 					panic('Error in the suffle')
 				}
-				elements_quantity: rand.shuffle_clone[u32](quantity, shuffle) or {
-					panic('Error in the suffle')
-				}
+				elements_quantity: quantity_list(4, 120)
 			}
 		}
 		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
@@ -325,6 +322,23 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 	}
 
 	return list_player
+}
+
+fn quantity_list(nb int, total u32) []u32 {
+	minu32 := u32(0)
+	maxu32 := total / u32(nb)
+
+	mut list := [rand.u32_in_range(minu32, maxu32) or { 0 }, rand.u32_in_range(minu32, maxu32) or { 0 },
+		rand.u32_in_range(minu32, maxu32) or { 0 }, rand.u32_in_range(minu32, maxu32) or { 0 }]
+
+	to_ad := u32((total - sum(list) or { 0 }) / u32(nb))
+	list[0] += u32((total - sum(list) or { 0 }) % u32(nb))
+
+	for mut elem in list {
+		elem = to_ad + elem
+	}
+	assert sum(list) or { panic('Error') } == total
+	return list
 }
 
 // ELEMENTALS:
