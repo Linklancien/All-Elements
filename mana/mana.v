@@ -298,9 +298,13 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 // ELEMENTALS:
 pub struct Elementals {
 	Elementals_render_const
+pub:
+	self int
 pub mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
+
+	showing_pool Mana_pool
 	// here is the index of the cible
 	target int
 }
@@ -330,22 +334,34 @@ fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
 // rendering
 
 // 1: render the elemental's mana pools
+// 2: render the id
+// 3: render the id of the cible
 fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 	// 1:
 	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
 	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
 		debug)
+	// 2:
+	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}')
+	ctx.draw_text_default(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
+		'CIBLE: ${elemental.target}')
 }
 
 // 1: render the information
+// 2: render the id
 fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
 	// 1:
-	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, .pie_chart)
+	elemental.showing_pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, .pie_chart)
+	// 2:
+	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}')
 }
 
 // list of concurents:
 // 1: calcul some const
 // 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
+// 3: initialise the quantity of each element !broken, need to add to the same number instead of a rand in 0..400
 pub fn prepare_game(numbers int, width int, height int) []Elementals {
 	// 1:
 	x_possible := [int(width / 6), int(width * 5 / 6)]
@@ -367,6 +383,9 @@ pub fn prepare_game(numbers int, width int, height int) []Elementals {
 			focus_pool_y: center_y
 			pool_x:       x
 			pool_y:       y
+			self:         id
+			target:			if id == 0{1}else{0}
+			// 3: ERROR
 			pool:         Mana_pool{
 				elements_list:     [Elements.water, Elements.air, Elements.fire, Elements.earth]
 				elements_quantity: [rand.u32_in_range(min_u32, max_u32) or { 0 },
@@ -375,6 +394,8 @@ pub fn prepare_game(numbers int, width int, height int) []Elementals {
 					rand.u32_in_range(min_u32, max_u32) or { 0 }]
 			}
 		}
+		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
+		list_player[id].showing_pool.elements_quantity = list_player[id].pool.elements_quantity.clone()
 	}
 
 	return list_player
@@ -456,6 +477,16 @@ pub fn (mut info Players_info) action(e &gg.Event) {
 				.y {
 					info.players[info.id_turn].spell_cast(reject_water, e.modifiers == 1)
 				}
+				._0, ._1, ._2, ._3, ._4, ._5, ._6, ._7, ._8, ._9 {
+					i := int(e.key_code) - 48
+					if i < info.players.len && i != info.id_turn {
+						info.players[info.id_turn].target = i
+					} else if info.id_turn == 0 {
+						info.players[info.id_turn].target = info.players.len - 1
+					} else {
+						info.players[info.id_turn].target = 0
+					}
+				}
 				else {}
 			}
 		}
@@ -474,6 +505,8 @@ fn (mut info Players_info) deal_damage() []int {
 		}
 		info.players[player.target].pool.rejecting(player.focus_pool)
 		player.focus_pool.reset()
+		player.showing_pool.elements_list = player.pool.elements_list.clone()
+		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
 	}
 	return deafeated
 }
