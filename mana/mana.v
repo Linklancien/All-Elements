@@ -112,6 +112,7 @@ struct Pos {
 // B:Game_infos
 struct Game_infos {
 mut:
+	nb_players int
 	ctx        &gg.Context = unsafe { nil }
 	center     Pos
 	size       Pos
@@ -119,9 +120,12 @@ mut:
 	game_state Running_step
 	debug_mode Debug_type = Debug_type.pie_chart
 	id_turn    int
+	// end
+	scores    []int
+	winner_id []int
 }
 
-pub fn start() {
+pub fn start(nb int) {
 	// rand.seed([u32(0), 0])
 	w := 800
 	h := 600
@@ -146,6 +150,8 @@ pub fn start() {
 		x: w
 		y: h
 	}
+	infos.nb_players = nb
+	infos.scores = []int{len: nb}
 
 	infos.ctx.run()
 }
@@ -155,7 +161,12 @@ fn on_frame(mut infos Game_infos) {
 	match infos.game_state {
 		.main_menu {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'MAIN MENU', text_cfg)
-			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Press enter to start',
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Last Winners: ${infos.winner_id}',
+				text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + 2 * text_cfg.size, 'Scores: ${infos.scores}',
+				text_cfg)
+
+			infos.ctx.draw_text(infos.center.x, infos.center.y + 3 * text_cfg.size, 'Press enter to start',
 				text_cfg)
 		}
 		.waiting_screen {
@@ -172,7 +183,12 @@ fn on_frame(mut infos Game_infos) {
 		}
 		.end_game {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'END GAME', text_cfg)
-			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Press enter to go back to the main menu',
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Winners: ${infos.winner_id}',
+				text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + 2 * text_cfg.size, 'Scores: ${infos.scores}',
+				text_cfg)
+
+			infos.ctx.draw_text(infos.center.x, infos.center.y + 3 * text_cfg.size, 'Press enter to go back to the main menu',
 				text_cfg)
 		}
 		.player_turn {
@@ -253,7 +269,8 @@ fn (mut infos Game_infos) next_game_state() {
 	match infos.game_state {
 		.main_menu {
 			infos.id_turn = 0
-			infos.players = prepare_game(2, infos.size.x, infos.size.y)
+			infos.winner_id = []int{}
+			infos.players = prepare_game(infos.nb_players, infos.size.x, infos.size.y)
 			infos.game_state = .waiting_screen
 		}
 		.player_turn {
@@ -270,10 +287,15 @@ fn (mut infos Game_infos) next_game_state() {
 		}
 		.end_turns {
 			defeat := infos.deal_damage()
-			println(defeat)
 			if defeat.len == 0 {
 				infos.game_state = .waiting_screen
 			} else {
+				for index in 0 .. infos.players.len {
+					if index !in defeat {
+						infos.winner_id << index
+						infos.scores[index] += 1
+					}
+				}
 				infos.game_state = .end_game
 			}
 		}
@@ -287,7 +309,7 @@ fn (mut infos Game_infos) next_game_state() {
 // list of concurents:
 // 1: calcul some const
 // 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
-// 3: initialise the quantity of each element !broken, need to add to the same number instead of a rand in 0..400
+// 3: initialise the quantity of each element, with a total const
 fn prepare_game(numbers int, width int, height int) []Elementals {
 	// 1:
 	x_possible := [int(width / 6), int(width * 5 / 6)]
@@ -309,7 +331,7 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 			pool_y:       y
 			self:         id
 			target:       if id == 0 { 1 } else { 0 }
-			// 3: ERROR
+			// 3:
 			pool: Mana_pool{
 				elements_list:     rand.shuffle_clone[Elements](elements_list, shuffle) or {
 					panic('Error in the suffle')
@@ -328,7 +350,8 @@ fn quantity_list(nb int, total u32) []u32 {
 	minu32 := u32(0)
 	maxu32 := total / u32(nb)
 
-	mut list := [rand.u32_in_range(minu32, maxu32) or { 0 }, rand.u32_in_range(minu32, maxu32) or { 0 },
+	mut list := [rand.u32_in_range(minu32, maxu32) or { 0 }, rand.u32_in_range(minu32,
+		maxu32) or { 0 },
 		rand.u32_in_range(minu32, maxu32) or { 0 }, rand.u32_in_range(minu32, maxu32) or { 0 }]
 
 	to_ad := u32((total - sum(list) or { 0 }) / u32(nb))
