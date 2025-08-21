@@ -28,10 +28,13 @@ fn main() {
 		sample_count: 4
 	)
 
-	app.players = mana.prepare_game(2, w, h)
 	app.center = mana.Pos{
 		x: w / 2
 		y: h / 2
+	}
+	app.size = mana.Pos{
+		x: w
+		y: h
 	}
 
 	app.ctx.run()

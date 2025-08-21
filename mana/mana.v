@@ -146,13 +146,18 @@ fn (mana_pool Mana_pool) get_color_list() []gg.Color {
 	return color_list
 }
 
-fn (mana_pool mana_pool) get_quantity(element Elements) u32{
-	for index, elem in mana_pool.elements_list{
-		if elem == element{
+fn (mana_pool Mana_pool) get_quantity(element Elements) u32 {
+	for index, elem in mana_pool.elements_list {
+		if elem == element {
 			return mana_pool.elements_quantity[index]
 		}
 	}
 	return 0
+}
+
+fn (mut mana_pool Mana_pool) reset() {
+	mana_pool.elements_list = []Elements{}
+	mana_pool.elements_quantity = []u32{}
 }
 
 // FN
@@ -394,6 +399,7 @@ pub:
 pub struct Players_info {
 pub mut:
 	center     Pos
+	size       Pos
 	players    []Elementals
 	game_state Running_step
 	debug_mode Debug_type = Debug_type.pie_chart
@@ -409,10 +415,10 @@ pub fn (info Players_info) render(ctx gg.Context, debug Debug_type) {
 			ctx.draw_text_default(info.center.x, info.center.y, 'WAITING SCREEN')
 			ctx.draw_text_default(info.center.x, info.center.y + 8, 'NEXT PLAYER: ${info.id_turn}')
 		}
-		.end_turns{
+		.end_turns {
 			ctx.draw_text_default(info.center.x, info.center.y, 'END TURNS')
 		}
-		.end_game{
+		.end_game {
 			ctx.draw_text_default(info.center.x, info.center.y, 'END GAME')
 		}
 		.player_turn {
@@ -458,16 +464,25 @@ pub fn (mut info Players_info) action(e &gg.Event) {
 }
 
 fn (mut info Players_info) deal_damage() []int {
-	for player in info.player{
-
+	mut deafeated := []int{}
+	for mut player in info.players {
+		for index, elem in player.focus_pool.elements_list {
+			if info.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
+				deafeated << player.target
+				continue
+			}
+		}
+		info.players[player.target].pool.rejecting(player.focus_pool)
+		player.focus_pool.reset()
 	}
-	return []int{}
+	return deafeated
 }
 
 fn (mut info Players_info) next_game_state() {
 	match info.game_state {
 		.main_menu {
 			info.id_turn = 0
+			info.players = prepare_game(2, info.size.x, info.size.y)
 			info.game_state = .waiting_screen
 		}
 		.player_turn {
@@ -484,6 +499,7 @@ fn (mut info Players_info) next_game_state() {
 		}
 		.end_turns {
 			defeat := info.deal_damage()
+			println(defeat)
 			if defeat.len == 0 {
 				info.game_state = .waiting_screen
 			} else {
