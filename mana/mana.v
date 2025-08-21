@@ -5,8 +5,8 @@ module mana
 // B: Game_infos, start
 // C: Elementals
 // D: World_map
-// D: Mana_pool
-// E: Rendering
+// E: Mana_pool
+// F: Rendering
 
 // A: import, const, Elements, Debug_type
 import gg
@@ -319,7 +319,71 @@ pub fn prepare_game(numbers int, width int, height int) []Elementals {
 	return list_player
 }
 
-// WORLD MAP
+// ELEMENTALS:
+pub struct Elementals {
+	Elementals_render_const
+pub:
+	self int
+pub mut:
+	pool       Mana_pool
+	focus_pool Mana_pool
+
+	showing_pool Mana_pool
+	// here is the index of the cible
+	target int
+}
+
+// 1: used for rendering during it's own turn
+// 2: used for rendering the information the ennemi is allowed to see
+pub struct Elementals_render_const {
+pub:
+	size f32 = 10
+	// 1:
+	focus_pool_x f32
+	focus_pool_y f32
+	// 2:
+	pool_x f32
+	pool_y f32
+}
+
+// spell
+fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
+	if is_reverse {
+		elemental.pool.absorbing(mut elemental.focus_pool.rejecting(quantity))
+	} else {
+		elemental.focus_pool.absorbing(mut elemental.pool.rejecting(quantity))
+	}
+}
+
+// rendering
+
+// 1: render the elemental's mana pools
+// 2: render the id
+// 3: render the id of the cible
+fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
+	// 1:
+	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
+	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
+		debug)
+	// 2:
+	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}')
+	ctx.draw_text_default(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
+		'CIBLE: ${elemental.target}')
+}
+
+// 1: render the information
+// 2: render the id
+fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
+	// 1:
+	elemental.showing_pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size,
+		.pie_chart)
+	// 2:
+	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}')
+}
+
+// D: World_map
 pub struct Mana_map {
 pub:
 	tile_size             f32
@@ -386,71 +450,7 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 	}
 }
 
-// ELEMENTALS:
-pub struct Elementals {
-	Elementals_render_const
-pub:
-	self int
-pub mut:
-	pool       Mana_pool
-	focus_pool Mana_pool
-
-	showing_pool Mana_pool
-	// here is the index of the cible
-	target int
-}
-
-// 1: used for rendering during it's own turn
-// 2: used for rendering the information the ennemi is allowed to see
-pub struct Elementals_render_const {
-pub:
-	size f32 = 10
-	// 1:
-	focus_pool_x f32
-	focus_pool_y f32
-	// 2:
-	pool_x f32
-	pool_y f32
-}
-
-// spell
-fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
-	if is_reverse {
-		elemental.pool.absorbing(mut elemental.focus_pool.rejecting(quantity))
-	} else {
-		elemental.focus_pool.absorbing(mut elemental.pool.rejecting(quantity))
-	}
-}
-
-// rendering
-
-// 1: render the elemental's mana pools
-// 2: render the id
-// 3: render the id of the cible
-fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
-	// 1:
-	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
-	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
-		debug)
-	// 2:
-	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
-		'ID: ${elemental.self}')
-	ctx.draw_text_default(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
-		'CIBLE: ${elemental.target}')
-}
-
-// 1: render the information
-// 2: render the id
-fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
-	// 1:
-	elemental.showing_pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size,
-		.pie_chart)
-	// 2:
-	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
-		'ID: ${elemental.self}')
-}
-
-// D: Mana_pool
+// E: Mana_pool
 pub struct Mana_pool {
 pub:
 	render_const Mana_pool_render_const
@@ -579,7 +579,7 @@ fn (mut mana_pool Mana_pool) reset() {
 	mana_pool.elements_quantity = []u32{}
 }
 
-// E: Rendering
+// F: Rendering
 fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
 	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
 	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Mana_pool_render_const ${render_const}'
