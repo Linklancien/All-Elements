@@ -149,17 +149,25 @@ fn on_frame(mut infos Game_infos) {
 	match infos.game_state {
 		.main_menu {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'MAIN MENU', text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Press enter to start',
+				text_cfg)
 		}
 		.waiting_screen {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'WAITING SCREEN', text_cfg)
 			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'NEXT PLAYER: ${infos.id_turn}',
 				text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + 2 * text_cfg.size, 'Press enter to continue',
+				text_cfg)
 		}
 		.end_turns {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'END TURNS', text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Press enter to continue ',
+				text_cfg)
 		}
 		.end_game {
 			infos.ctx.draw_text(infos.center.x, infos.center.y, 'END GAME', text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'Press enter to go back to the main menu',
+				text_cfg)
 		}
 		.player_turn {
 			for index, elemental in infos.players {
@@ -168,6 +176,10 @@ fn on_frame(mut infos Game_infos) {
 				} else {
 					elemental.ennemi_render(infos.ctx, infos.debug_mode)
 				}
+				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3, 'use e, r, t, y to expulse earth, air, fire, water',
+					text_cfg)
+				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + text_cfg.size, 'use maj and the previous letter to absorb those elements',
+					text_cfg)
 			}
 		}
 		else {}
@@ -186,10 +198,10 @@ fn on_event(e &gg.Event, mut infos Game_infos) {
 					infos.next_game_state()
 				}
 				.e {
-					infos.players[infos.id_turn].spell_cast(reject_air, e.modifiers == 1)
+					infos.players[infos.id_turn].spell_cast(reject_earth, e.modifiers == 1)
 				}
 				.r {
-					infos.players[infos.id_turn].spell_cast(reject_earth, e.modifiers == 1)
+					infos.players[infos.id_turn].spell_cast(reject_air, e.modifiers == 1)
 				}
 				.t {
 					infos.players[infos.id_turn].spell_cast(reject_fire, e.modifiers == 1)
@@ -355,7 +367,7 @@ fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 		debug)
 	// 2:
 	ctx.draw_text(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
-		'ID: ${elemental.self}', text_cfg)
+		'YOU: ${elemental.self}', text_cfg)
 	ctx.draw_text(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
 		'CIBLE: ${elemental.target}', text_cfg)
 }
