@@ -1,5 +1,11 @@
 module mana
 
+// ORGA:
+// A: import, const
+// B: Game_infos
+// 
+
+// A: import, const
 import gg
 import math
 import rand
@@ -72,6 +78,184 @@ pub fn (mut dtype Debug_type) next() {
 		}
 	}
 }
+
+// B:Game_infos
+pub struct Game_infos {
+pub mut:
+	ctx        &gg.Context = unsafe { nil }
+	center     Pos
+	size       Pos
+	players    []Elementals
+	game_state Running_step
+	debug_mode Debug_type = Debug_type.pie_chart
+	id_turn    int
+}
+
+fn on_frame(mut infos Game_infos) {
+	infos.ctx.begin()
+	infos.render(infos.ctx, infos.debug_mode)
+	infos.ctx.end()
+}
+
+pub fn (infos Game_infos) render(ctx gg.Context, debug Debug_type) {
+	match infos.game_state {
+		.main_menu {
+			ctx.draw_text_default(infos.center.x, infos.center.y, 'MAIN MENU')
+		}
+		.waiting_screen {
+			ctx.draw_text_default(infos.center.x, infos.center.y, 'WAITING SCREEN')
+			ctx.draw_text_default(infos.center.x, infos.center.y + 8, 'NEXT PLAYER: ${infos.id_turn}')
+		}
+		.end_turns {
+			ctx.draw_text_default(infos.center.x, infos.center.y, 'END TURNS')
+		}
+		.end_game {
+			ctx.draw_text_default(infos.center.x, infos.center.y, 'END GAME')
+		}
+		.player_turn {
+			for index, elemental in infos.players {
+				if index == infos.id_turn {
+					elemental.self_render(ctx, debug)
+				} else {
+					elemental.ennemi_render(ctx, debug)
+				}
+			}
+		}
+		else {}
+	}
+}
+
+pub fn start() {
+	rand.seed([u32(0), 0])
+	w := 800
+	h := 600
+
+	mut infos := &Game_infos{}
+	infos.ctx = gg.new_context(
+		width:        w
+		height:       h
+		window_title: '-Render Mana-'
+		user_data:    infos
+		bg_color:     bg_color
+		frame_fn:     on_frame
+		event_fn:     on_event
+		sample_count: 4
+	)
+
+	infos.ctx = gg.new_context(
+		width:        w
+		height:       h
+		window_title: '-Mana Duel-'
+		user_data:    infos
+		bg_color:     bg_color
+		frame_fn:     on_frame
+		event_fn:     on_event
+		sample_count: 4
+	)
+
+	infos.center = Pos{
+		x: w / 2
+		y: h / 2
+	}
+	infos.size = Pos{
+		x: w
+		y: h
+	}
+
+	infos.ctx.run()
+}
+
+pub fn on_event(e &gg.Event, mut infos Game_infos) {
+	match e.typ {
+		.key_down {
+			match e.key_code {
+				.p {
+					infos.debug_mode.next()
+				}
+				.enter {
+					infos.next_game_state()
+				}
+				.e {
+					infos.players[infos.id_turn].spell_cast(reject_air, e.modifiers == 1)
+				}
+				.r {
+					infos.players[infos.id_turn].spell_cast(reject_earth, e.modifiers == 1)
+				}
+				.t {
+					infos.players[infos.id_turn].spell_cast(reject_fire, e.modifiers == 1)
+				}
+				.y {
+					infos.players[infos.id_turn].spell_cast(reject_water, e.modifiers == 1)
+				}
+				._0, ._1, ._2, ._3, ._4, ._5, ._6, ._7, ._8, ._9 {
+					i := int(e.key_code) - 48
+					if i < infos.players.len && i != infos.id_turn {
+						infos.players[infos.id_turn].target = i
+					} else if infos.id_turn == 0 {
+						infos.players[infos.id_turn].target = infos.players.len - 1
+					} else {
+						infos.players[infos.id_turn].target = 0
+					}
+				}
+				else {}
+			}
+		}
+		else {}
+	}
+}
+
+fn (mut infos Game_infos) deal_damage() []int {
+	mut deafeated := []int{}
+	for mut player in infos.players {
+		for index, elem in player.focus_pool.elements_list {
+			if infos.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
+				deafeated << player.target
+				continue
+			}
+		}
+		infos.players[player.target].pool.rejecting(player.focus_pool)
+		player.focus_pool.reset()
+		player.showing_pool.elements_list = player.pool.elements_list.clone()
+		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
+	}
+	return deafeated
+}
+
+fn (mut infos Game_infos) next_game_state() {
+	match infos.game_state {
+		.main_menu {
+			infos.id_turn = 0
+			infos.players = prepare_game(2, infos.size.x, infos.size.y)
+			infos.game_state = .waiting_screen
+		}
+		.player_turn {
+			if infos.id_turn == infos.players.len - 1 {
+				infos.id_turn = 0
+				infos.game_state = .end_turns
+			} else {
+				infos.id_turn += 1
+				infos.game_state = .waiting_screen
+			}
+		}
+		.waiting_screen {
+			infos.game_state = .player_turn
+		}
+		.end_turns {
+			defeat := infos.deal_damage()
+			println(defeat)
+			if defeat.len == 0 {
+				infos.game_state = .waiting_screen
+			} else {
+				infos.game_state = .end_game
+			}
+		}
+		.end_game {
+			infos.game_state = .main_menu
+		}
+		else {}
+	}
+}
+
 
 //  RENDERING:
 fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
@@ -420,178 +604,3 @@ pub:
 
 const bg_color = gg.Color{0, 0, 0, 255}
 
-pub struct Players_info {
-pub mut:
-	ctx        &gg.Context = unsafe { nil }
-	center     Pos
-	size       Pos
-	players    []Elementals
-	game_state Running_step
-	debug_mode Debug_type = Debug_type.pie_chart
-	id_turn    int
-}
-
-fn on_frame(mut infos Players_info) {
-	infos.ctx.begin()
-	infos.render(infos.ctx, infos.debug_mode)
-	infos.ctx.end()
-}
-
-pub fn (infos Players_info) render(ctx gg.Context, debug Debug_type) {
-	match infos.game_state {
-		.main_menu {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'MAIN MENU')
-		}
-		.waiting_screen {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'WAITING SCREEN')
-			ctx.draw_text_default(infos.center.x, infos.center.y + 8, 'NEXT PLAYER: ${infos.id_turn}')
-		}
-		.end_turns {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'END TURNS')
-		}
-		.end_game {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'END GAME')
-		}
-		.player_turn {
-			for index, elemental in infos.players {
-				if index == infos.id_turn {
-					elemental.self_render(ctx, debug)
-				} else {
-					elemental.ennemi_render(ctx, debug)
-				}
-			}
-		}
-		else {}
-	}
-}
-
-pub fn start() {
-	rand.seed([u32(0), 0])
-	w := 800
-	h := 600
-
-	mut infos := &Players_info{}
-	infos.ctx = gg.new_context(
-		width:        w
-		height:       h
-		window_title: '-Render Mana-'
-		user_data:    infos
-		bg_color:     bg_color
-		frame_fn:     on_frame
-		event_fn:     on_event
-		sample_count: 4
-	)
-
-	infos.ctx = gg.new_context(
-		width:        w
-		height:       h
-		window_title: '-Mana Duel-'
-		user_data:    infos
-		bg_color:     bg_color
-		frame_fn:     on_frame
-		event_fn:     on_event
-		sample_count: 4
-	)
-
-	infos.center = Pos{
-		x: w / 2
-		y: h / 2
-	}
-	infos.size = Pos{
-		x: w
-		y: h
-	}
-
-	infos.ctx.run()
-}
-
-pub fn on_event(e &gg.Event, mut infos Players_info) {
-	match e.typ {
-		.key_down {
-			match e.key_code {
-				.p {
-					infos.debug_mode.next()
-				}
-				.enter {
-					infos.next_game_state()
-				}
-				.e {
-					infos.players[infos.id_turn].spell_cast(reject_air, e.modifiers == 1)
-				}
-				.r {
-					infos.players[infos.id_turn].spell_cast(reject_earth, e.modifiers == 1)
-				}
-				.t {
-					infos.players[infos.id_turn].spell_cast(reject_fire, e.modifiers == 1)
-				}
-				.y {
-					infos.players[infos.id_turn].spell_cast(reject_water, e.modifiers == 1)
-				}
-				._0, ._1, ._2, ._3, ._4, ._5, ._6, ._7, ._8, ._9 {
-					i := int(e.key_code) - 48
-					if i < infos.players.len && i != infos.id_turn {
-						infos.players[infos.id_turn].target = i
-					} else if infos.id_turn == 0 {
-						infos.players[infos.id_turn].target = infos.players.len - 1
-					} else {
-						infos.players[infos.id_turn].target = 0
-					}
-				}
-				else {}
-			}
-		}
-		else {}
-	}
-}
-
-fn (mut infos Players_info) deal_damage() []int {
-	mut deafeated := []int{}
-	for mut player in infos.players {
-		for index, elem in player.focus_pool.elements_list {
-			if infos.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
-				deafeated << player.target
-				continue
-			}
-		}
-		infos.players[player.target].pool.rejecting(player.focus_pool)
-		player.focus_pool.reset()
-		player.showing_pool.elements_list = player.pool.elements_list.clone()
-		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
-	}
-	return deafeated
-}
-
-fn (mut infos Players_info) next_game_state() {
-	match infos.game_state {
-		.main_menu {
-			infos.id_turn = 0
-			infos.players = prepare_game(2, infos.size.x, infos.size.y)
-			infos.game_state = .waiting_screen
-		}
-		.player_turn {
-			if infos.id_turn == infos.players.len - 1 {
-				infos.id_turn = 0
-				infos.game_state = .end_turns
-			} else {
-				infos.id_turn += 1
-				infos.game_state = .waiting_screen
-			}
-		}
-		.waiting_screen {
-			infos.game_state = .player_turn
-		}
-		.end_turns {
-			defeat := infos.deal_damage()
-			println(defeat)
-			if defeat.len == 0 {
-				infos.game_state = .waiting_screen
-			} else {
-				infos.game_state = .end_game
-			}
-		}
-		.end_game {
-			infos.game_state = .main_menu
-		}
-		else {}
-	}
-}
