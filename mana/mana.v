@@ -15,8 +15,13 @@ import rand
 import arrays { max, sum }
 
 const bg_color = gg.Color{0, 0, 0, 255}
+const text_cfg = gg.TextCfg{
+	color:          gg.white
+	align:          .center
+	vertical_align: .middle
+}
 
-pub enum Elements {
+enum Elements {
 	empty
 	water
 	fire
@@ -25,7 +30,7 @@ pub enum Elements {
 }
 
 // map[Elements]gg.Color
-pub const elements_color = {
+const elements_color = {
 	Elements.water: gg.dark_blue
 	Elements.fire:  gg.dark_red
 	Elements.earth: gg.dark_green
@@ -50,13 +55,13 @@ const reject_air = Mana_pool{
 	elements_quantity: [u32(1)]
 }
 
-pub enum Debug_type {
+enum Debug_type {
 	no
 	pie_chart
 	numbers
 }
 
-pub fn (mut dtype Debug_type) next_debug() {
+fn (mut dtype Debug_type) next_debug() {
 	match *dtype {
 		.no {
 			dtype = Debug_type.pie_chart
@@ -70,7 +75,7 @@ pub fn (mut dtype Debug_type) next_debug() {
 	}
 }
 
-pub fn (mut dtype Debug_type) next() {
+fn (mut dtype Debug_type) next() {
 	match *dtype {
 		.numbers {
 			dtype = Debug_type.pie_chart
@@ -93,15 +98,14 @@ enum Running_step {
 	end_game
 }
 
-pub struct Pos {
-pub:
+struct Pos {
 	x int
 	y int
 }
 
 // B:Game_infos
-pub struct Game_infos {
-pub mut:
+struct Game_infos {
+mut:
 	ctx        &gg.Context = unsafe { nil }
 	center     Pos
 	size       Pos
@@ -109,40 +113,6 @@ pub mut:
 	game_state Running_step
 	debug_mode Debug_type = Debug_type.pie_chart
 	id_turn    int
-}
-
-fn on_frame(mut infos Game_infos) {
-	infos.ctx.begin()
-	infos.render(infos.ctx, infos.debug_mode)
-	infos.ctx.end()
-}
-
-pub fn (infos Game_infos) render(ctx gg.Context, debug Debug_type) {
-	match infos.game_state {
-		.main_menu {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'MAIN MENU')
-		}
-		.waiting_screen {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'WAITING SCREEN')
-			ctx.draw_text_default(infos.center.x, infos.center.y + 8, 'NEXT PLAYER: ${infos.id_turn}')
-		}
-		.end_turns {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'END TURNS')
-		}
-		.end_game {
-			ctx.draw_text_default(infos.center.x, infos.center.y, 'END GAME')
-		}
-		.player_turn {
-			for index, elemental in infos.players {
-				if index == infos.id_turn {
-					elemental.self_render(ctx, debug)
-				} else {
-					elemental.ennemi_render(ctx, debug)
-				}
-			}
-		}
-		else {}
-	}
 }
 
 pub fn start() {
@@ -162,17 +132,6 @@ pub fn start() {
 		sample_count: 4
 	)
 
-	infos.ctx = gg.new_context(
-		width:        w
-		height:       h
-		window_title: '-Mana Duel-'
-		user_data:    infos
-		bg_color:     bg_color
-		frame_fn:     on_frame
-		event_fn:     on_event
-		sample_count: 4
-	)
-
 	infos.center = Pos{
 		x: w / 2
 		y: h / 2
@@ -185,7 +144,38 @@ pub fn start() {
 	infos.ctx.run()
 }
 
-pub fn on_event(e &gg.Event, mut infos Game_infos) {
+fn on_frame(mut infos Game_infos) {
+	infos.ctx.begin()
+	match infos.game_state {
+		.main_menu {
+			infos.ctx.draw_text(infos.center.x, infos.center.y, 'MAIN MENU', text_cfg)
+		}
+		.waiting_screen {
+			infos.ctx.draw_text(infos.center.x, infos.center.y, 'WAITING SCREEN', text_cfg)
+			infos.ctx.draw_text(infos.center.x, infos.center.y + text_cfg.size, 'NEXT PLAYER: ${infos.id_turn}',
+				text_cfg)
+		}
+		.end_turns {
+			infos.ctx.draw_text(infos.center.x, infos.center.y, 'END TURNS', text_cfg)
+		}
+		.end_game {
+			infos.ctx.draw_text(infos.center.x, infos.center.y, 'END GAME', text_cfg)
+		}
+		.player_turn {
+			for index, elemental in infos.players {
+				if index == infos.id_turn {
+					elemental.self_render(infos.ctx, infos.debug_mode)
+				} else {
+					elemental.ennemi_render(infos.ctx, infos.debug_mode)
+				}
+			}
+		}
+		else {}
+	}
+	infos.ctx.end()
+}
+
+fn on_event(e &gg.Event, mut infos Game_infos) {
 	match e.typ {
 		.key_down {
 			match e.key_code {
@@ -280,7 +270,7 @@ fn (mut infos Game_infos) next_game_state() {
 // 1: calcul some const
 // 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
 // 3: initialise the quantity of each element !broken, need to add to the same number instead of a rand in 0..400
-pub fn prepare_game(numbers int, width int, height int) []Elementals {
+fn prepare_game(numbers int, width int, height int) []Elementals {
 	// 1:
 	x_possible := [int(width / 6), int(width * 5 / 6)]
 	height_dif := height / numbers
@@ -320,11 +310,10 @@ pub fn prepare_game(numbers int, width int, height int) []Elementals {
 }
 
 // ELEMENTALS:
-pub struct Elementals {
+struct Elementals {
 	Elementals_render_const
-pub:
 	self int
-pub mut:
+mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
 
@@ -335,8 +324,7 @@ pub mut:
 
 // 1: used for rendering during it's own turn
 // 2: used for rendering the information the ennemi is allowed to see
-pub struct Elementals_render_const {
-pub:
+struct Elementals_render_const {
 	size f32 = 10
 	// 1:
 	focus_pool_x f32
@@ -366,10 +354,10 @@ fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
 		debug)
 	// 2:
-	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
-		'ID: ${elemental.self}')
-	ctx.draw_text_default(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
-		'CIBLE: ${elemental.target}')
+	ctx.draw_text(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}', text_cfg)
+	ctx.draw_text(int(elemental.focus_pool_x), int(elemental.focus_pool_y - elemental.focus_pool.render_const.thickness_max),
+		'CIBLE: ${elemental.target}', text_cfg)
 }
 
 // 1: render the information
@@ -379,22 +367,21 @@ fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
 	elemental.showing_pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size,
 		.pie_chart)
 	// 2:
-	ctx.draw_text_default(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
-		'ID: ${elemental.self}')
+	ctx.draw_text(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
+		'ID: ${elemental.self}', text_cfg)
 }
 
 // D: World_map
-pub struct Mana_map {
-pub:
+struct Mana_map {
 	tile_size             f32
 	minimum_mana_exchange u32
-pub mut:
+mut:
 	x              f32
 	y              f32
 	mana_pool_list [][]Mana_pool
 }
 
-pub fn (mut mana_map Mana_map) balancing() {
+fn (mut mana_map Mana_map) balancing() {
 	mana_pool_list_sav := mana_map.mana_pool_list.clone()
 	x_max := mana_map.mana_pool_list.len
 	y_max := mana_map.mana_pool_list[0].len
@@ -439,7 +426,7 @@ fn difference(mana_pool1 Mana_pool, mana_pool2 Mana_pool, minimum_mana_exchange 
 	return element_greater, element_smaller
 }
 
-pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
+fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 	for x in 0 .. mana_map.mana_pool_list.len {
 		for y in 0 .. mana_map.mana_pool_list[0].len {
 			pos_x := x * mana_map.tile_size + mana_map.x
@@ -451,17 +438,15 @@ pub fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 }
 
 // E: Mana_pool
-pub struct Mana_pool {
-pub:
+struct Mana_pool {
 	render_const Mana_pool_render_const
-pub mut:
+mut:
 	// Two list of the same size
 	elements_list     []Elements
 	elements_quantity []u32
 }
 
-pub struct Mana_pool_render_const {
-pub:
+struct Mana_pool_render_const {
 	radius        f32
 	thickness_min f32 = 30
 	thickness_max f32 = 50
@@ -469,7 +454,7 @@ pub:
 }
 
 // UI
-pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debug Debug_type) {
+fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debug Debug_type) {
 	match debug {
 		.pie_chart {
 			pie_chart(mana_pool.get_color_list(), mana_pool.elements_quantity, x, y, mana_pool.render_const,
@@ -483,14 +468,14 @@ pub fn (mana_pool Mana_pool) render(ctx gg.Context, x f32, y f32, size f32, debu
 		.numbers {
 			for index, element in mana_pool.elements_list {
 				description := '${element}: ${mana_pool.elements_quantity[index]}'
-				ctx.draw_text_default(int(x), int(y + index * 8), description)
+				ctx.draw_text(int(x), int(y + index * text_cfg.size), description, text_cfg)
 			}
 		}
 	}
 }
 
 // FN:
-pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
+fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool {
 	mut elements_list := []Elements{}
 	mut elements_quantity := []u32{}
 
@@ -522,7 +507,7 @@ pub fn (mut mana_pool Mana_pool) rejecting(other_mana_pool Mana_pool) Mana_pool 
 	}
 }
 
-pub fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
+fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 	for other_index, other_element in other_mana_pool.elements_list {
 		mut not_merged := true
 		for index, element in mana_pool.elements_list {
