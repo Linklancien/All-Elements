@@ -2,11 +2,12 @@ module mana
 
 // ORGA:
 // A: import, const, Elements, Debug_type
-// B: Game_infos, start
-// C: Elementals
-// D: World_map
-// E: Mana_pool
-// F: Rendering
+// B: Start
+// C:Game_infos
+// D: Elementals
+// E: World_map
+// F: Mana_pool
+// G: Rendering
 
 // A: import, const, Elements, Debug_type
 import gg
@@ -109,22 +110,8 @@ struct Pos {
 	y int
 }
 
-// B:Game_infos
-struct Game_infos {
-mut:
-	nb_players int
-	ctx        &gg.Context = unsafe { nil }
-	center     Pos
-	size       Pos
-	players    []Elementals
-	game_state Running_step
-	debug_mode Debug_type = Debug_type.pie_chart
-	id_turn    int
-	// end
-	scores    []int
-	winner_id []int
-}
 
+//  B: Start
 pub fn start(nb int) {
 	// rand.seed([u32(0), 0])
 	w := 800
@@ -248,64 +235,6 @@ fn on_event(e &gg.Event, mut infos Game_infos) {
 	}
 }
 
-fn (mut infos Game_infos) deal_damage() []int {
-	mut deafeated := []int{}
-	for mut player in infos.players {
-		for index, elem in player.focus_pool.elements_list {
-			if infos.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
-				deafeated << player.target
-				continue
-			}
-		}
-		infos.players[player.target].pool.rejecting(player.focus_pool)
-		player.focus_pool.reset()
-		player.showing_pool.elements_list = player.pool.elements_list.clone()
-		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
-	}
-	return deafeated
-}
-
-fn (mut infos Game_infos) next_game_state() {
-	match infos.game_state {
-		.main_menu {
-			infos.id_turn = 0
-			infos.winner_id = []int{}
-			infos.players = prepare_game(infos.nb_players, infos.size.x, infos.size.y)
-			infos.game_state = .waiting_screen
-		}
-		.player_turn {
-			if infos.id_turn == infos.players.len - 1 {
-				infos.id_turn = 0
-				infos.game_state = .end_turns
-			} else {
-				infos.id_turn += 1
-				infos.game_state = .waiting_screen
-			}
-		}
-		.waiting_screen {
-			infos.game_state = .player_turn
-		}
-		.end_turns {
-			defeat := infos.deal_damage()
-			if defeat.len == 0 {
-				infos.game_state = .waiting_screen
-			} else {
-				for index in 0 .. infos.players.len {
-					if index !in defeat {
-						infos.winner_id << index
-						infos.scores[index] += 1
-					}
-				}
-				infos.game_state = .end_game
-			}
-		}
-		.end_game {
-			infos.game_state = .main_menu
-		}
-		else {}
-	}
-}
-
 // list of concurents:
 // 1: calcul some const
 // 2: calcul the postion of each player using their index (no finish)/ can be change to initialise the array directly
@@ -364,7 +293,82 @@ fn quantity_list(nb int, total u32) []u32 {
 	return list
 }
 
-// ELEMENTALS:
+// C:Game_infos
+struct Game_infos {
+mut:
+	nb_players int
+	ctx        &gg.Context = unsafe { nil }
+	center     Pos
+	size       Pos
+	players    []Elementals
+	game_state Running_step
+	debug_mode Debug_type = Debug_type.pie_chart
+	id_turn    int
+	// end
+	scores    []int
+	winner_id []int
+}
+
+fn (mut infos Game_infos) deal_damage() []int {
+	mut deafeated := []int{}
+	for mut player in infos.players {
+		for index, elem in player.focus_pool.elements_list {
+			if infos.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
+				deafeated << player.target
+				continue
+			}
+		}
+		infos.players[player.target].pool.rejecting(player.focus_pool)
+		player.focus_pool.reset()
+		player.showing_pool.elements_list = player.pool.elements_list.clone()
+		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
+	}
+	return deafeated
+}
+
+fn (mut infos Game_infos) next_game_state() {
+	match infos.game_state {
+		.main_menu {
+			infos.id_turn = 0
+			infos.winner_id = []int{}
+			infos.players = prepare_game(infos.nb_players, infos.size.x, infos.size.y)
+			infos.game_state = .waiting_screen
+		}
+		.player_turn {
+			if infos.id_turn == infos.players.len - 1 {
+				infos.id_turn = 0
+				infos.game_state = .end_turns
+			} else {
+				infos.id_turn += 1
+				infos.game_state = .waiting_screen
+			}
+		}
+		.waiting_screen {
+			infos.game_state = .player_turn
+		}
+		.end_turns {
+			defeat := infos.deal_damage()
+			if defeat.len == 0 {
+				infos.game_state = .waiting_screen
+			} else {
+				for index in 0 .. infos.players.len {
+					if index !in defeat {
+						infos.winner_id << index
+						infos.scores[index] += 1
+					}
+				}
+				infos.game_state = .end_game
+			}
+		}
+		.end_game {
+			infos.game_state = .main_menu
+		}
+		else {}
+	}
+}
+
+
+// D: Elementals
 struct Elementals {
 	Elementals_render_const
 	self int
@@ -426,7 +430,7 @@ fn (elemental Elementals) ennemi_render(ctx gg.Context, debug Debug_type) {
 		'ID: ${elemental.self}', text_cfg)
 }
 
-// D: World_map
+// E: World_map
 struct Mana_map {
 	tile_size             f32
 	minimum_mana_exchange u32
@@ -492,7 +496,7 @@ fn (mana_map Mana_map) render(ctx gg.Context, debug Debug_type) {
 	}
 }
 
-// E: Mana_pool
+// F: Mana_pool
 struct Mana_pool {
 	render_const Mana_pool_render_const
 mut:
@@ -619,7 +623,7 @@ fn (mut mana_pool Mana_pool) reset() {
 	mana_pool.elements_quantity = []u32{}
 }
 
-// F: Rendering
+// G: Rendering
 fn pie_chart(color_list []gg.Color, elements_quantity []u32, x f32, y f32, render_const Mana_pool_render_const, ctx gg.Context) {
 	assert color_list.len == elements_quantity.len, "Len aren't the same ${color_list}, ${elements_quantity}"
 	assert render_const.thickness_min <= render_const.thickness_max, 'error in struct Mana_pool_render_const ${render_const}'
