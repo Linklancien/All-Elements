@@ -189,6 +189,8 @@ fn on_frame(mut infos Game_infos) {
 					text_cfg)
 				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + text_cfg.size,
 					'use maj and the previous letter to absorb those elements', text_cfg)
+				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + 2 * text_cfg.size,
+					'each expulsed element will weaken the oposit element in the target core', text_cfg)
 			}
 		}
 		else {}
@@ -267,6 +269,7 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 				}
 				elements_quantity: quantity_list(4, 120)
 			}
+			max_focus: u32(50)
 		}
 		list_player[id].showing_pool.elements_list = list_player[id].pool.elements_list.clone()
 		list_player[id].showing_pool.elements_quantity = list_player[id].pool.elements_quantity.clone()
@@ -375,6 +378,7 @@ struct Elementals {
 mut:
 	pool       Mana_pool
 	focus_pool Mana_pool
+	max_focus  u32
 
 	showing_pool Mana_pool
 	// here is the index of the cible
@@ -397,7 +401,7 @@ struct Elementals_render_const {
 fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
 	if is_reverse {
 		elemental.pool.absorbing(mut elemental.focus_pool.rejecting(quantity))
-	} else {
+	} else if sum(elemental.focus_pool.elements_quantity) or {0} < elemental.max_focus{
 		elemental.focus_pool.absorbing(mut elemental.pool.rejecting(quantity))
 	}
 }
@@ -412,6 +416,10 @@ fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
 	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
 		debug)
+	sum := sum(elemental.focus_pool.elements_quantity) or {0}
+	txt := 'FOCUS: ${sum}/${elemental.max_focus}'
+	ctx.draw_text(int(elemental.focus_pool_x), int(elemental.focus_pool_y + elemental.focus_pool.render_const.thickness_max),
+		txt, text_cfg)
 	// 2:
 	ctx.draw_text(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
 		'YOU: ${elemental.self}', text_cfg)
