@@ -36,12 +36,22 @@ enum Elements {
 	air
 }
 
+// map[Elements]Elements
+const opposit = {
+	Elements.empty: Elements.empty
+	.water:         .fire
+	.fire:          .water
+	.earth:         .air
+	.air:           .earth
+}
+
 // map[Elements]gg.Color
 const elements_color = {
-	Elements.water: gg.dark_blue
-	Elements.fire:  gg.dark_red
-	Elements.earth: gg.dark_green
-	Elements.air:   gg.gray
+	Elements.empty: gg.pink
+	.water:         gg.dark_blue
+	.fire:          gg.dark_red
+	.earth:         gg.dark_green
+	.air:           gg.gray
 }
 
 // Reject
@@ -109,7 +119,6 @@ struct Pos {
 	x int
 	y int
 }
-
 
 //  B: Start
 pub fn start(nb int) {
@@ -190,7 +199,8 @@ fn on_frame(mut infos Game_infos) {
 				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + text_cfg.size,
 					'use maj and the previous letter to absorb those elements', text_cfg)
 				infos.ctx.draw_text(infos.center.x, infos.center.y * 1 / 3 + 2 * text_cfg.size,
-					'each expulsed element will weaken the oposit element in the target core', text_cfg)
+					'each expulsed element will weaken the opposit element in the target core',
+					text_cfg)
 			}
 		}
 		else {}
@@ -263,7 +273,7 @@ fn prepare_game(numbers int, width int, height int) []Elementals {
 			self:         id
 			target:       if id == 0 { 1 } else { 0 }
 			// 3:
-			pool: Mana_pool{
+			pool:      Mana_pool{
 				elements_list:     rand.shuffle_clone[Elements](elements_list, shuffle) or {
 					panic('Error in the suffle')
 				}
@@ -370,7 +380,6 @@ fn (mut infos Game_infos) next_game_state() {
 	}
 }
 
-
 // D: Elementals
 struct Elementals {
 	Elementals_render_const
@@ -401,7 +410,7 @@ struct Elementals_render_const {
 fn (mut elemental Elementals) spell_cast(quantity Mana_pool, is_reverse bool) {
 	if is_reverse {
 		elemental.pool.absorbing(mut elemental.focus_pool.rejecting(quantity))
-	} else if sum(elemental.focus_pool.elements_quantity) or {0} < elemental.max_focus{
+	} else if sum(elemental.focus_pool.elements_quantity) or { 0 } < elemental.max_focus {
 		elemental.focus_pool.absorbing(mut elemental.pool.rejecting(quantity))
 	}
 }
@@ -416,10 +425,10 @@ fn (elemental Elementals) self_render(ctx gg.Context, debug Debug_type) {
 	elemental.pool.render(ctx, elemental.pool_x, elemental.pool_y, elemental.size, debug)
 	elemental.focus_pool.render(ctx, elemental.focus_pool_x, elemental.focus_pool_y, elemental.size,
 		debug)
-	sum := sum(elemental.focus_pool.elements_quantity) or {0}
+	sum := sum(elemental.focus_pool.elements_quantity) or { 0 }
 	txt := 'FOCUS: ${sum}/${elemental.max_focus}'
-	ctx.draw_text(int(elemental.focus_pool_x), int(elemental.focus_pool_y + elemental.focus_pool.render_const.thickness_max),
-		txt, text_cfg)
+	ctx.draw_text(int(elemental.focus_pool_x), int(elemental.focus_pool_y +
+		elemental.focus_pool.render_const.thickness_max), txt, text_cfg)
 	// 2:
 	ctx.draw_text(int(elemental.pool_x), int(elemental.pool_y - elemental.pool.render_const.thickness_max),
 		'YOU: ${elemental.self}', text_cfg)
