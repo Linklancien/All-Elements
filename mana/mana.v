@@ -3,7 +3,7 @@ module mana
 // ORGA:
 // A: import, const, Elements, Debug_type
 // B: Start
-// C:Game_infos
+// C: Game_infos
 // D: Elementals
 // E: World_map
 // F: Mana_pool
@@ -293,7 +293,7 @@ fn quantity_list(nb int, total u32) []u32 {
 	return list
 }
 
-// C:Game_infos
+// C: Game_infos
 struct Game_infos {
 mut:
 	nb_players int
