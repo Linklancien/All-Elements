@@ -322,16 +322,23 @@ mut:
 	winner_id []int
 }
 
+// for each player
+// 1: check if the attack is letal
+// 2: if not, inflict dommage to the target
+// 3: reset the player status
 fn (mut infos Game_infos) deal_damage() []int {
 	mut deafeated := []int{}
 	for mut player in infos.players {
+		// 1:
 		for index, elem in player.focus_pool.elements_list {
-			if infos.players[player.target].pool.get_quantity(elem) < player.focus_pool.elements_quantity[index] {
+			if infos.players[player.target].pool.get_quantity(opposit[elem]) < player.focus_pool.elements_quantity[index] {
 				deafeated << player.target
 				continue
 			}
 		}
-		infos.players[player.target].pool.rejecting(player.focus_pool)
+		// 2:
+		infos.players[player.target].pool.rejecting(player.focus_pool.opposit())
+		// 3:
 		player.focus_pool.reset()
 		player.showing_pool.elements_list = player.pool.elements_list.clone()
 		player.showing_pool.elements_quantity = player.pool.elements_quantity.clone()
@@ -600,6 +607,18 @@ fn (mut mana_pool Mana_pool) absorbing(mut other_mana_pool Mana_pool) {
 		}
 	}
 	other_mana_pool = Mana_pool{}
+}
+
+fn (mana_pool Mana_pool) opposit() Mana_pool{
+	mut pool := Mana_pool{
+		elements_quantity: mana_pool.elements_quantity
+	}
+
+	for elem in mana_pool.elements_list{
+		pool.elements_list << opposit[elem]
+	}
+
+	return pool
 }
 
 fn (mana_pool Mana_pool) most_of_element() Elements {
